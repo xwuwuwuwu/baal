@@ -1,0 +1,11 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=labfuncteststorage;AccountKey=HVYI+78tq3yugVqOnzHGILUYRE+8CkvEBY3Nau2oOsWd++CPe5ZgCwBzaXk2QLvPtjbNYbFTjXNrIT0hnYtBUA==;EndpointSuffix=core.windows.net",
+    "FUNCTIONS_WORKER_RUNTIME": "java",
+    "builderRedisHost": "labfunctest.redis.cache.windows.net",
+    "builderRedisPort": "6379",
+    "builderRedisDatabase": "0",
+    "builderRedisPassword": "o4VKealijBknM20SgEc+QLTaEcfzLpM9YOvR6jBYnxw="
+  }
+}
