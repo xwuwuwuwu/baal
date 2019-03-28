@@ -27,6 +27,10 @@ namespace AzureBootloaderCompiler
             {
                 throw new CompileException($"taskID is null");
             }
+            if (!js.TryGetValue("jobID", out var jobIDToken))
+            {
+                throw new CompileException($"jobID is null");
+            }
             if (!js.TryGetValue("sourcePath", out var sourcePathToken))
             {
                 throw new CompileException($"sourcePath is null");
@@ -36,11 +40,16 @@ namespace AzureBootloaderCompiler
                 throw new CompileException($"targetPath is null");
             }
             var taskID = taskIDToken.ToObject<string>();
+            var jobID = jobIDToken.ToObject<string>();
             var sourcePath = sourcePathToken.ToObject<string>();
             var targetPath = targetPathToken.ToObject<string>();
             if (string.IsNullOrWhiteSpace(taskID))
             {
                 throw new CompileException($"taskID is empty");
+            }
+            if (string.IsNullOrWhiteSpace(jobID))
+            {
+                throw new CompileException($"jobID is empty");
             }
             if (string.IsNullOrWhiteSpace(sourcePath))
             {
@@ -51,11 +60,26 @@ namespace AzureBootloaderCompiler
                 throw new CompileException($"targetPath is empty");
             }
 
-            Logger nlogger = CompilerHelper.GetLogger(taskID);
+            var workspace = $"/tmp/bootloader/{taskID}/{jobID}";
+            try
+            {
+                await BuildAsync(taskID, sourcePath, targetPath, workspace);
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+            finally
+            {
+                if (Directory.Exists(workspace))
+                {
+                    Directory.Delete(workspace, true);
+                }
+            }
+        }
 
-
-            var workspace = $"/tmp/{taskID}";
-
+        private static async Task BuildAsync(string taskID, string sourcePath, string targetPath, string workspace)
+        {
             if (Directory.Exists(workspace))
             {
                 Directory.Delete(workspace, true);
@@ -121,9 +145,10 @@ namespace AzureBootloaderCompiler
                 var blobPath = $"{targetPath}/{taskID}/{outputID}/{kv.Value}";
                 await CompilerHelper.UploadOutputAsync(kv.Key, blobPath);
             }
-
-            Directory.Delete(workspace, true);
-
+            if (Directory.Exists(workspace))
+            {
+                Directory.Delete(workspace, true);
+            }
         }
     }
 }
