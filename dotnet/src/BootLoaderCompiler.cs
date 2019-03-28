@@ -121,6 +121,9 @@ namespace AzureBootloaderCompiler
                 var blobPath = $"{targetPath}/{taskID}/{outputID}/{kv.Value}";
                 await CompilerHelper.UploadOutputAsync(kv.Key, blobPath);
             }
+
+            Directory.Delete(workspace, true);
+
         }
     }
 }
