@@ -13,7 +13,7 @@ namespace AzureBootloaderCompiler
     {
         [FunctionName("Alive")]
         public static async Task<IActionResult> RunAsync(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
             HttpRequest request,
             ILogger logger)
         {
