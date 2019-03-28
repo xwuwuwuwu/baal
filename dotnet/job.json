@@ -1,0 +1,5 @@
+{
+    "taskID": "111",
+    "sourcePath": "https://labfuncteststorage.blob.core.windows.net/source/bootloader.zip",
+    "targetPath": "https://labfuncteststorage.blob.core.windows.net/testtarget"
+}
