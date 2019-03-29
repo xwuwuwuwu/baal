@@ -65,8 +65,14 @@ namespace AzureBootloaderCompiler
             {
                 await BuildAsync(taskID, sourcePath, targetPath, workspace);
             }
+            catch (AggregateException ae)
+            {
+                logger.LogInformation(ae.InnerException.Message);
+                throw ae.InnerException;
+            }
             catch (Exception e)
             {
+                logger.LogInformation(e.Message);
                 throw e;
             }
             finally
@@ -76,6 +82,7 @@ namespace AzureBootloaderCompiler
                     Directory.Delete(workspace, true);
                 }
             }
+            logger.LogInformation($"taskID : {taskID}, jobID : {jobID} success");
         }
 
         private static async Task BuildAsync(string taskID, string sourcePath, string targetPath, string workspace)
