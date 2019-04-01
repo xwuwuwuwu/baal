@@ -1,0 +1,9 @@
+{
+  "version": "2.0",
+  "http": {
+    "routePrefix": "",
+    "maxOutstandingRequests": 20,
+    "maxConcurrentRequests": 10,
+    "dynamicThrottlesEnabled": false
+  }
+}
