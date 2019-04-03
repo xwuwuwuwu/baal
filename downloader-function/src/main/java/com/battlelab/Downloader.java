@@ -6,48 +6,103 @@ import com.google.gson.JsonObject;
 import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.*;
 
+import java.nio.file.Paths;
 import java.util.*;
 
 public class Downloader {
 
     private static final String TAG = "tag";
     private static final String ABI = "abi";
-    private static final String DOWNLOADER_URIS = "DownloaderUris";
+    private static final String VERSION = "v";
+    private static final String TIMESTAMP = "timestamp";
+
+    private static final String DOWNLOADER_URIS_FORMATTER = "DownloaderUris_V%d";
     private static final String DEST_CONTAINER = "AzureWebJobsStorageDestContainer";
-    private static final List<String> ABIS = Arrays.asList("armeabi", "armeabi-v7a", "arm64-v8a");
     private static final String AZURE_WEB_JOBS_STORAGE = "AzureWebJobsStorage";
+    public static final int TOKEN_EXPIRED_SECONDS = 60 * 5;
+    public static final int GET_URL_EXPIRED_SECONDS = 30;
+    public static final int ELF_DEFAULT_TAG_LENGTH = 64;
+
+    private static final List<String> ABIS = Arrays.asList("armeabi", "armeabi-v7a", "arm64-v8a");
     private static List<String> ABIS_32 = Arrays.asList("armeabi", "armeabi-v7a");
     private static List<String> ABIS_64 = Arrays.asList("arm64-v8a");
-
 
     private static Gson gson = new Gson();
 
     @FunctionName("UrlGenerator")
     public HttpResponseMessage run(
-            @HttpTrigger(name = "req", methods = {HttpMethod.GET, HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS)
+            @HttpTrigger(name = "req",
+                    methods = {HttpMethod.POST},
+                    authLevel = AuthorizationLevel.ANONYMOUS)
                     HttpRequestMessage<Optional<String>> request,
             final ExecutionContext context) {
+        long start = System.currentTimeMillis();
+
         context.getLogger().info("Java UrlGenerator trigger processed a request.");
 
-        // Parse query parameter
-        String tag = request.getQueryParameters().get("t");
+        Optional<String> body = request.getBody();
 
-        if (tag == null || tag.isEmpty()) {
-            return request.createResponseBuilder(HttpStatus.BAD_REQUEST).body("Please pass a tag on the query string or in the request body").build();
+        if (!body.isPresent()) {
+            context.getLogger().info("Java UrlGenerator trigger no request body.");
+            return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
+                    .body("no body.").build();
         }
 
-        String abi = request.getQueryParameters().get("a");
+        String eTag = request.getHeaders().get("ETag");
+
+        if (eTag == null || eTag.isEmpty()) {
+            context.getLogger().info("Java UrlGenerator trigger no ETag.");
+            return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
+                    .body("no header.").build();
+        }
+
+        String bodyString = body.get();
+
+        JsonObject jsonObject = gson.fromJson(bodyString, JsonObject.class);
+        String tag = jsonObject.get(TAG).getAsString();
+        String abi = jsonObject.get(ABI).getAsString();
+        int version = jsonObject.get(VERSION).getAsInt();
+        long timestamp = jsonObject.get(TIMESTAMP).getAsLong();
+
+        if (tag == null || tag.isEmpty() || tag.length() > Constant.MAX_TAG_LENGTH) {
+            context.getLogger().info("Java UrlGenerator trigger no tag.");
+            return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
+                    .body("Please pass a tag on the query string or in the request body").build();
+        }
+
         if (abi == null || !validAbi(abi)) {
-            return request.createResponseBuilder(HttpStatus.BAD_REQUEST).body("Please pass a abi on the query string or in the request body").build();
+            context.getLogger().info("Java UrlGenerator trigger no abi.");
+            return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
+                    .body("Please pass a abi on the query string or in the request body").build();
         }
+
+        if ((System.currentTimeMillis() - timestamp) > GET_URL_EXPIRED_SECONDS * 1000) {
+            context.getLogger().info("Java UrlGenerator timeout.");
+            return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
+                    .body("timeout.").build();
+        }
+
+        String eTag1 = Sha256Helper.getETag(bodyString, SecretHelper.makeSecret(tag, version));
+
+        if (!eTag.equals(eTag1)) {
+            context.getLogger().info("Java UrlGenerator trigger wrong ETag.");
+            return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
+                    .body("wrong ETag.").build();
+        }
+
         Map<String, String> values = new HashMap<>();
         values.put(TAG, tag);
         values.put(ABI, abi.toLowerCase());
-        String withTag = JwtTokenHelper.create(values, 60 * 5);
+
+        String withTag = JwtTokenHelper.create(values, TOKEN_EXPIRED_SECONDS);
 
         String s = Base64.getEncoder().encodeToString(withTag.getBytes());
-        String prefix = getDownloaderPrefixUri();
-        return request.createResponseBuilder(HttpStatus.OK).body(String.format("http://%s%s", prefix, s)).build();
+        String prefix = getDownloaderPrefixUri(version);
+
+        HttpResponseMessage build = request.createResponseBuilder(HttpStatus.OK)
+                .body(String.format("http://%s", Paths.get(prefix, s).toString())).build();
+        context.getLogger().info("UrlGenerator cost : " + (System.currentTimeMillis() - start));
+        return build;
     }
 
     private boolean validAbi(String abi) {
@@ -63,15 +118,16 @@ public class Downloader {
             @HttpTrigger(name = "req",
                     methods = {HttpMethod.GET, HttpMethod.POST},
                     authLevel = AuthorizationLevel.ANONYMOUS,
-                    route = "download/{token}")
+                    route = "download/{version}/{token}")
                     HttpRequestMessage<Optional<String>> request,
             @BindingName("token") String token,
             @TableInput(name = "configuration",
                     tableName = "configuration",
-                    partitionKey = "config",
+                    partitionKey = "{version}",
                     rowKey = "latest")
                     String configuration,
             final ExecutionContext context) {
+        long start = System.currentTimeMillis();
         context.getLogger().info("Java download trigger processed a request.");
 
         String t = new String(Base64.getDecoder().decode(token.getBytes()));
@@ -88,11 +144,7 @@ public class Downloader {
         String taskId = jsonObject.get("TaskId").getAsString();
         int threshold = jsonObject.get("Threshold").getAsInt();
 
-        context.getLogger().info("download TaskId " + taskId + " threshold " + threshold);
-
         int index = threshold == 1 ? 1 : new Random().nextInt(threshold - 1) + 1;
-
-        context.getLogger().info("download TaskId " + taskId + " threshold " + threshold);
 
         String dest = System.getenv(DEST_CONTAINER);
 
@@ -102,11 +154,10 @@ public class Downloader {
 
         try {
             byte[] bytes = AzureStorageHelper.downloadBlobToByteArray(connectionString, dest, blobName);
-            long start = System.currentTimeMillis();
             writeTag(bytes, tag);
-            context.getLogger().info("write tag cost " + (System.currentTimeMillis() - start));
-
-            return request.createResponseBuilder(HttpStatus.OK).body(bytes).build();
+            HttpResponseMessage build = request.createResponseBuilder(HttpStatus.OK).body(bytes).build();
+            context.getLogger().info("Java download cost : " + (System.currentTimeMillis() - start));
+            return build;
         } catch (Exception e) {
             return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR).body("b error").build();
         }
@@ -114,7 +165,7 @@ public class Downloader {
 
     private void writeTag(byte[] bytes, String tag) {
 
-        for (int i = 0; i < bytes.length; i += 64) {
+        for (int i = 0; i < bytes.length; i += ELF_DEFAULT_TAG_LENGTH) {
             if (bytes[i] == 84) {
                 int first = getFirstT(bytes, i);
                 if (first > 0) {
@@ -140,7 +191,7 @@ public class Downloader {
                 end++;
             }
         }
-        if ((end - start) == 65) {
+        if ((end - start) == ELF_DEFAULT_TAG_LENGTH + 1) {
             return start + 1;
         }
         return -1;
@@ -150,8 +201,8 @@ public class Downloader {
         return String.format("%s/%d/%s", taskId, index, x64 ? "bl64" : "bl32");
     }
 
-    private String getDownloaderPrefixUri() {
-        String uris = System.getenv(DOWNLOADER_URIS);
+    private String getDownloaderPrefixUri(int version) {
+        String uris = System.getenv(String.format(DOWNLOADER_URIS_FORMATTER, version));
         if (uris == null || uris.isEmpty()) {
             throw new RuntimeException("missing hosts");
         }
