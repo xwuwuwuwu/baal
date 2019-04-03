@@ -99,10 +99,10 @@ public class Downloader {
         String s = Base64.getEncoder().encodeToString(withTag.getBytes());
         String prefix = getDownloaderPrefixUri(version);
 
-        HttpResponseMessage build = request.createResponseBuilder(HttpStatus.OK)
+        HttpResponseMessage response = request.createResponseBuilder(HttpStatus.OK)
                 .body(String.format("http://%s", Paths.get(prefix, s).toString())).build();
         context.getLogger().info("UrlGenerator cost : " + (System.currentTimeMillis() - start));
-        return build;
+        return response;
     }
 
     private boolean validAbi(String abi) {
