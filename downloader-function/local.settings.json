@@ -4,7 +4,7 @@
     "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=labfuncteststorage;AccountKey=HVYI+78tq3yugVqOnzHGILUYRE+8CkvEBY3Nau2oOsWd++CPe5ZgCwBzaXk2QLvPtjbNYbFTjXNrIT0hnYtBUA==;EndpointSuffix=core.windows.net",
     "AzureWebJobsStorageDestContainer": "testtarget",
     "FUNCTIONS_WORKER_RUNTIME": "java",
-    "DownloaderUris": "127.0.0.1:7071/api/download/v1/,127.0.0.1:7071/api/download/v1/"
+    "DownloaderUris_V1": "127.0.0.1:7071/api/download/v1/,127.0.0.1:7071/api/download/v1/"
   },
   "http": {
     "routePrefix": "",

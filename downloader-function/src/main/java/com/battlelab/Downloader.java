@@ -48,7 +48,7 @@ public class Downloader {
                     .body("no body.").build();
         }
 
-        String eTag = request.getHeaders().get("ETag");
+        String eTag = request.getHeaders().get("etag");
 
         if (eTag == null || eTag.isEmpty()) {
             context.getLogger().info("Java UrlGenerator trigger no ETag.");
