@@ -5,8 +5,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.*;
+import com.microsoft.azure.storage.StorageException;
 
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
 import java.util.*;
 
 public class Downloader {
@@ -15,7 +18,7 @@ public class Downloader {
     private static final String ABI = "abi";
     private static final String VERSION = "v";
     private static final String TIMESTAMP = "timestamp";
-
+    private static final int MAX_RETRY_COUNT = 3;
     private static final String DOWNLOADER_URIS_FORMATTER = "DownloaderUris_V%d";
     private static final String DEST_CONTAINER = "AzureWebJobsStorageDestContainer";
     private static final String AZURE_WEB_JOBS_STORAGE = "AzureWebJobsStorage";
@@ -144,24 +147,41 @@ public class Downloader {
         String taskId = jsonObject.get("TaskId").getAsString();
         int threshold = jsonObject.get("Threshold").getAsInt();
 
-        int index = threshold == 1 ? 1 : new Random().nextInt(threshold - 1) + 1;
+        byte[] target = null;
+        for (int i = 0; i < MAX_RETRY_COUNT; i++) {
+            target = getRandomSo(x64,taskId,threshold);
+            if (target != null){
+                writeTag(target, tag);
+                break;
+            }
+        }
 
-        String dest = System.getenv(DEST_CONTAINER);
-
-        String blobName = getTargetBlobName(taskId, index, x64);
-
-        String connectionString = System.getenv(AZURE_WEB_JOBS_STORAGE);
-
-        try {
-            byte[] bytes = AzureStorageHelper.downloadBlobToByteArray(connectionString, dest, blobName);
-            writeTag(bytes, tag);
-            HttpResponseMessage build = request.createResponseBuilder(HttpStatus.OK).body(bytes).build();
-            context.getLogger().info("Java download cost : " + (System.currentTimeMillis() - start));
-            return build;
-        } catch (Exception e) {
+        if (target == null){
             return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR).body("b error").build();
         }
+
+        HttpResponseMessage build = request.createResponseBuilder(HttpStatus.OK).body(target).build();
+        context.getLogger().info("Java download cost : " + (System.currentTimeMillis() - start));
+        return build;
     }
+
+    private byte[] getRandomSo(boolean x64, String taskId, int threshold) {
+        int index = threshold == 1 ? 1 : new Random().nextInt(threshold - 1) + 1;
+        String dest = System.getenv(DEST_CONTAINER);
+        String blobName = getTargetBlobName(taskId, index, x64);
+        String connectionString = System.getenv(AZURE_WEB_JOBS_STORAGE);
+        try {
+            return AzureStorageHelper.downloadBlobToByteArray(connectionString, dest, blobName);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        } catch (StorageException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
     private void writeTag(byte[] bytes, String tag) {
 
