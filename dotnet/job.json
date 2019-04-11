@@ -1,6 +1,7 @@
 {
-    "taskID": "333",
-    "jobID": "100",
+    "version": "v1",
+    "taskID": "111",
+    "jobID": "111",
     "sourcePath": "https://labfuncteststorage.blob.core.windows.net/source/bootloader.zip",
     "targetPath": "https://labfuncteststorage.blob.core.windows.net/testtarget"
 }

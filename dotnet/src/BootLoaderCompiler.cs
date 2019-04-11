@@ -72,7 +72,7 @@ namespace AzureBootloaderCompiler
             var workspace = $"/tmp/bootloader/{version}/{taskID}/{jobID}";
             try
             {
-                await BuildAsync(taskID, jobID, sourcePath, targetPath, workspace);
+                await BuildAsync(version, taskID, jobID, sourcePath, targetPath, workspace);
             }
             catch (AggregateException ae)
             {
