@@ -1,7 +1,6 @@
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using NLog;
-using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -49,15 +48,6 @@ namespace AzureBootloaderCompiler
                 throw new CompileException($"blob {blobPath} exists");
             }
             await blob.UploadFromFileAsync(outputPath);
-        }
-
-        public static async Task<int> GetIDFromRedisAsync(string taskID)
-        {
-            var connectionString = Environment.GetEnvironmentVariable("RedisConnectionString");
-            var connection = await ConnectionMultiplexer.ConnectAsync(connectionString);
-            var database = connection.GetDatabase();
-            var orderNumber = (int)await database.StringIncrementAsync(taskID);
-            return orderNumber;
         }
 
         public static void NdkBuild(string abi, string source, string output)

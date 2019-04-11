@@ -63,7 +63,7 @@ namespace AzureBootloaderCompiler
             var workspace = $"/tmp/bootloader/{taskID}/{jobID}";
             try
             {
-                await BuildAsync(taskID, sourcePath, targetPath, workspace);
+                await BuildAsync(taskID, jobID, sourcePath, targetPath, workspace);
             }
             catch (AggregateException ae)
             {
@@ -85,7 +85,7 @@ namespace AzureBootloaderCompiler
             logger.LogInformation($"taskID : {taskID}, jobID : {jobID} success");
         }
 
-        private static async Task BuildAsync(string taskID, string sourcePath, string targetPath, string workspace)
+        private static async Task BuildAsync(string taskID, string jobID, string sourcePath, string targetPath, string workspace)
         {
             if (Directory.Exists(workspace))
             {
@@ -146,7 +146,7 @@ namespace AzureBootloaderCompiler
                 File.Copy(outputSoPath, targetSoPath);
                 outputMap.Add(targetSoPath, filename);
             }
-            var outputID = await CompilerHelper.GetIDFromRedisAsync(taskID);
+            var outputID = jobID;
             foreach (var kv in outputMap)
             {
                 var blobPath = $"{targetPath}/{taskID}/{outputID}/{kv.Value}";
