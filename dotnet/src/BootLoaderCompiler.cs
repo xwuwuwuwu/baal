@@ -23,6 +23,10 @@ namespace AzureBootloaderCompiler
             Microsoft.Extensions.Logging.ILogger logger)
         {
             var js = JsonConvert.DeserializeObject<JObject>(jsonString);
+            if (!js.TryGetValue("version", out var versionToken))
+            {
+                throw new CompileException($"jobID is null");
+            }
             if (!js.TryGetValue("taskID", out var taskIDToken))
             {
                 throw new CompileException($"taskID is null");
@@ -39,10 +43,15 @@ namespace AzureBootloaderCompiler
             {
                 throw new CompileException($"targetPath is null");
             }
+            var version = versionToken.ToObject<string>();
             var taskID = taskIDToken.ToObject<string>();
             var jobID = jobIDToken.ToObject<string>();
             var sourcePath = sourcePathToken.ToObject<string>();
             var targetPath = targetPathToken.ToObject<string>();
+            if (string.IsNullOrWhiteSpace(version))
+            {
+                throw new CompileException($"version is empty");
+            }
             if (string.IsNullOrWhiteSpace(taskID))
             {
                 throw new CompileException($"taskID is empty");
@@ -60,7 +69,7 @@ namespace AzureBootloaderCompiler
                 throw new CompileException($"targetPath is empty");
             }
 
-            var workspace = $"/tmp/bootloader/{taskID}/{jobID}";
+            var workspace = $"/tmp/bootloader/{version}/{taskID}/{jobID}";
             try
             {
                 await BuildAsync(taskID, jobID, sourcePath, targetPath, workspace);
@@ -82,10 +91,10 @@ namespace AzureBootloaderCompiler
                     Directory.Delete(workspace, true);
                 }
             }
-            logger.LogInformation($"taskID : {taskID}, jobID : {jobID} success");
+            logger.LogInformation($"version : {version}, taskID : {taskID}, jobID : {jobID} success");
         }
 
-        private static async Task BuildAsync(string taskID, string jobID, string sourcePath, string targetPath, string workspace)
+        private static async Task BuildAsync(string version, string taskID, string jobID, string sourcePath, string targetPath, string workspace)
         {
             if (Directory.Exists(workspace))
             {
@@ -149,7 +158,7 @@ namespace AzureBootloaderCompiler
             var outputID = jobID;
             foreach (var kv in outputMap)
             {
-                var blobPath = $"{targetPath}/{taskID}/{outputID}/{kv.Value}";
+                var blobPath = $"{targetPath}/{version}/{taskID}/{outputID}/{kv.Value}";
                 await CompilerHelper.UploadOutputAsync(kv.Key, blobPath);
             }
             if (Directory.Exists(workspace))
