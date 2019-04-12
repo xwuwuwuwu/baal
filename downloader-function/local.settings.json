@@ -4,12 +4,21 @@
     "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=labfuncteststorage;AccountKey=HVYI+78tq3yugVqOnzHGILUYRE+8CkvEBY3Nau2oOsWd++CPe5ZgCwBzaXk2QLvPtjbNYbFTjXNrIT0hnYtBUA==;EndpointSuffix=core.windows.net",
     "AzureWebJobsStorageDestContainer": "testtarget",
     "FUNCTIONS_WORKER_RUNTIME": "java",
-    "DownloaderUris_V1": "127.0.0.1:7071/api/download/v1/,127.0.0.1:7071/api/download/v1/"
+    "DownloaderUris_V1": "127.0.0.1:7071/api/download/v1/,127.0.0.1:7071/api/download/v1/",
+    "job_queue": "test1jobs",
+    "job_table": "test1jobs",
+    "job_history_table": "test1jobhistory",
+    "deploy_table": "test1deploy",
+    "source_path": "https://labfuncteststorage.blob.core.windows.net/source/bootloader.zip",
+    "target_path": "https://labfuncteststorage.blob.core.windows.net/test1target",
+    "redis": "redis://EDH7IeVEO8BZ9wu9KPLwTCydCUPpPLGcsxnvnwKVEWw=@bootloader.redis.cache.windows.net:6379/15"
   },
-  "http": {
-    "routePrefix": "",
-    "maxOutstandingRequests": 20,
-    "maxConcurrentRequests": 10,
-    "dynamicThrottlesEnabled": false
+  "extensions": {
+    "http": {
+      "routePrefix": "",
+      "maxOutstandingRequests": 20,
+      "maxConcurrentRequests": 10,
+      "dynamicThrottlesEnabled": false
+    }
   }
 }
