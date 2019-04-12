@@ -20,7 +20,7 @@ public class Downloader {
     private static final String TIMESTAMP = "timestamp";
     private static final int MAX_RETRY_COUNT = 3;
     private static final String DOWNLOADER_URIS_FORMATTER = "DownloaderUris_V%d";
-    private static final String DEST_CONTAINER = "AzureWebJobsStorageDestContainer";
+    private static final String TARGET_PATH = "target_path";
     private static final String AZURE_WEB_JOBS_STORAGE = "AzureWebJobsStorage";
     public static final int TOKEN_EXPIRED_SECONDS = 60 * 5;
     public static final int GET_URL_EXPIRED_SECONDS = 30;
@@ -56,7 +56,7 @@ public class Downloader {
         if (eTag == null || eTag.isEmpty()) {
             context.getLogger().info("Java UrlGenerator trigger no ETag.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-                    .body("no header.").build();
+                    .body("no ETag.").build();
         }
 
         String bodyString = body.get();
@@ -116,6 +116,7 @@ public class Downloader {
         return ABIS.contains(abi.toLowerCase());
     }
 
+    //MARK version 升级的逻辑需要升级时候优化
     @FunctionName("download")
     @StorageAccount(AZURE_WEB_JOBS_STORAGE)
     public HttpResponseMessage download(
@@ -125,8 +126,9 @@ public class Downloader {
                     route = "download/{version}/{token}")
                     HttpRequestMessage<Optional<String>> request,
             @BindingName("token") String token,
+            @BindingName("version") String version,
             @TableInput(name = "configuration",
-                    tableName = "configuration",
+                    tableName = "deploy",
                     partitionKey = "{version}",
                     rowKey = "latest")
                     String configuration,
@@ -150,7 +152,7 @@ public class Downloader {
 
         byte[] target = null;
         for (int i = 0; i < MAX_RETRY_COUNT; i++) {
-            target = getRandomSo(x64, taskId, threshold);
+            target = getRandomSo(x64, taskId, threshold, version);
             if (target != null) {
                 writeTag(target, tag);
                 break;
@@ -166,13 +168,14 @@ public class Downloader {
         return build;
     }
 
-    private byte[] getRandomSo(boolean x64, String taskId, int threshold) {
+    private byte[] getRandomSo(boolean x64, String taskId, int threshold, String version) {
         int index = threshold == 1 ? 1 : new Random().nextInt(threshold - 1) + 1;
-        String dest = System.getenv(DEST_CONTAINER);
-        String blobName = getTargetBlobName(taskId, index, x64);
+        String target = System.getenv(TARGET_PATH);
+        String blobName = getTargetBlobName(taskId, index, x64, version);
         String connectionString = System.getenv(AZURE_WEB_JOBS_STORAGE);
+        String targetUri = String.format("%s/%s", target, blobName);
         try {
-            return AzureStorageHelper.downloadBlobToByteArray(connectionString, dest, blobName);
+            return AzureStorageHelper.downloadBlobToByteArray(connectionString, targetUri);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         } catch (StorageException e) {
@@ -218,8 +221,8 @@ public class Downloader {
         return -1;
     }
 
-    private String getTargetBlobName(String taskId, int index, boolean x64) {
-        return String.format("%s/%d/%s", taskId, index, x64 ? "bl64" : "bl32");
+    private String getTargetBlobName(String taskId, int index, boolean x64, String version) {
+        return String.format("%s/%s/%d/%s", version, taskId, index, x64 ? "bl64" : "bl32");
     }
 
     private String getDownloaderPrefixUri(int version) {
@@ -227,7 +230,7 @@ public class Downloader {
         if (uris == null || uris.isEmpty()) {
             throw new RuntimeException("missing hosts");
         }
-        uris.replace('\\','/');
+        uris.replace('\\', '/');
         String[] split = uris.split(",");
         return split[split.length == 1 ? 0 : new Random().nextInt(split.length - 1)];
     }

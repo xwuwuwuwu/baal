@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 
@@ -22,12 +23,29 @@ public class AzureStorageHelper {
         return blockBlobReference.openInputStream();
     }
 
-    public static byte[] downloadBlobToByteArray(String connectionString,String container, String blobname) throws URISyntaxException, StorageException, InvalidKeyException {
+    public static byte[] downloadBlobToByteArray(String connectionString, String container, String blobname) throws URISyntaxException, StorageException, InvalidKeyException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(100 * 1024);
-        try{
+        try {
             CloudBlobContainer containerReference = getCloudBlobContainer(connectionString, container);
             CloudBlockBlob blockBlob = containerReference.getBlockBlobReference(blobname);
             blockBlob.download(outputStream);
+            return outputStream.toByteArray();
+        } finally {
+            try {
+                outputStream.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    public static byte[] downloadBlobToByteArray(String connectionString, String uri) throws URISyntaxException, InvalidKeyException, StorageException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(100 * 1024);
+
+        System.out.println("downloadBlobToByteArray : " + uri);
+        try {
+            CloudStorageAccount account = CloudStorageAccount.parse(connectionString);
+            CloudBlockBlob cloudBlockBlob = new CloudBlockBlob(URI.create(uri), account.getCredentials());
+            cloudBlockBlob.download(outputStream);
             return outputStream.toByteArray();
         } finally {
             try {
