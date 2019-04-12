@@ -29,7 +29,6 @@ public class PlanHelper {
         StorageHelper.Settings settings = StorageHelper.Settings.load();
         logger.info("begin");
         String key = "bootloader_plan_lock";
-        String rcs = settings.getRedis();
         try {
             StopWatch sw = new StopWatch();
             sw.start();

@@ -10,8 +10,7 @@
     "job_history_table": "test1jobhistory",
     "deploy_table": "test1deploy",
     "source_path": "https://labfuncteststorage.blob.core.windows.net/source/bootloader.zip",
-    "target_path": "https://labfuncteststorage.blob.core.windows.net/test1target",
-    "redis": "redis://EDH7IeVEO8BZ9wu9KPLwTCydCUPpPLGcsxnvnwKVEWw=@bootloader.redis.cache.windows.net:6379/15"
+    "target_path": "https://labfuncteststorage.blob.core.windows.net/test1target"
   },
   "extensions": {
     "http": {

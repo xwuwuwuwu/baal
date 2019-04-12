@@ -20,7 +20,6 @@ public class StorageHelper {
         public static final String DEPLOY_TABLE_KEY = "deploy_table";
         public static final String SOURCE_PATH_KEY = "source_path";
         public static final String TARGET_PATH_KEY = "target_path";
-        public static final String REDIS_KEY = "redis";
 
         private String azureWebJobsStorage;
         private String jobTableName;
@@ -29,7 +28,6 @@ public class StorageHelper {
         private String jobQueueName;
         private String sourcePath;
         private String targetPath;
-        private String redis;
 
 
         public String getAzureWebJobsStorage() {
@@ -89,13 +87,6 @@ public class StorageHelper {
             this.targetPath = targetPath;
         }
 
-        public String getRedis() {
-            return this.redis;
-        }
-
-        public void setRedis(String redis) {
-            this.redis = redis;
-        }
 
         public static Settings load() {
             Settings settings = new Settings();
@@ -106,7 +97,6 @@ public class StorageHelper {
             settings.setJobQueueName(System.getenv(Settings.JOB_QUEUE_KEY));
             settings.setSourcePath(System.getenv(Settings.SOURCE_PATH_KEY));
             settings.setTargetPath(System.getenv(Settings.TARGET_PATH_KEY));
-            settings.setRedis(System.getenv(Settings.REDIS_KEY));
             Objects.requireNonNull(settings.getAzureWebJobsStorage());
             Objects.requireNonNull(settings.getJobTableName());
             Objects.requireNonNull(settings.getJobHistoryTableName());
@@ -114,10 +104,7 @@ public class StorageHelper {
             Objects.requireNonNull(settings.getJobQueueName());
             Objects.requireNonNull(settings.getSourcePath());
             Objects.requireNonNull(settings.getTargetPath());
-            Objects.requireNonNull(settings.getRedis());
             return settings;
         }
-
-
     }
 }
