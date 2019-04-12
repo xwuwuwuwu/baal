@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using NLog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace AzureBootloaderCompiler
             string jsonString,
             Microsoft.Extensions.Logging.ILogger logger)
         {
+            var sw = Stopwatch.StartNew();
             var js = JsonConvert.DeserializeObject<JObject>(jsonString);
             if (!js.TryGetValue("version", out var versionToken))
             {
@@ -72,7 +74,7 @@ namespace AzureBootloaderCompiler
             var workspace = $"/tmp/bootloader/{version}/{taskID}/{jobID}";
             try
             {
-                await BuildAsync(version, taskID, jobID, sourcePath, targetPath, workspace);
+                await BuildAsync(logger, version, taskID, jobID, sourcePath, targetPath, workspace);
             }
             catch (AggregateException ae)
             {
@@ -91,10 +93,11 @@ namespace AzureBootloaderCompiler
                     Directory.Delete(workspace, true);
                 }
             }
-            logger.LogInformation($"version : {version}, taskID : {taskID}, jobID : {jobID} success");
+            sw.Stop();
+            logger.LogInformation($"cast : {sw.ElapsedMilliseconds} ms, version : {version}, taskID : {taskID}, jobID : {jobID} success");
         }
 
-        private static async Task BuildAsync(string version, string taskID, string jobID, string sourcePath, string targetPath, string workspace)
+        private static async Task BuildAsync(Microsoft.Extensions.Logging.ILogger logger, string version, string taskID, string jobID, string sourcePath, string targetPath, string workspace)
         {
             if (Directory.Exists(workspace))
             {
@@ -104,62 +107,78 @@ namespace AzureBootloaderCompiler
 
             var sourceZip = $"{workspace}/bootloader.zip";
             {
+                var sw = Stopwatch.StartNew();
                 var buffer = await CompilerHelper.DownloadSourceCodeAsync(sourcePath);
                 var fs = new FileStream(sourceZip, FileMode.CreateNew);
                 fs.Write(buffer, 0, buffer.Length);
                 fs.Flush();
                 fs.Close();
+                sw.Stop();
+                logger.LogInformation($"task {taskID} download source code cost {sw.ElapsedMilliseconds} ms");
             }
             var sourceCodePath = $"{workspace}/sourceCode";
-            if (Directory.Exists(sourceCodePath))
             {
-                Directory.Delete(sourceCodePath);
-            }
-            Directory.CreateDirectory(sourceCodePath);
-            {
-                ZipFile.ExtractToDirectory(sourceZip, sourceCodePath);
+                var sw = Stopwatch.StartNew();
+                if (Directory.Exists(sourceCodePath))
+                {
+                    Directory.Delete(sourceCodePath);
+                }
+                Directory.CreateDirectory(sourceCodePath);
+                {
+                    ZipFile.ExtractToDirectory(sourceZip, sourceCodePath);
+                }
+                logger.LogInformation($"task {taskID} prepare cost {sw.ElapsedMilliseconds} ms");
             }
 
             var outputMap = new Dictionary<string, string>();
 
             var soPath = $"{workspace}/so";
             Directory.CreateDirectory(soPath);
-
-            foreach (var abi in ABIS)
             {
-                string filename;
-                var outputPath = $"{workspace}/output";
-                switch (abi)
+                var sw = Stopwatch.StartNew();
+                foreach (var abi in ABIS)
                 {
-                    case "armeabi":
-                        filename = "bl32";
-                        break;
-                    case "arm64-v8a":
-                        filename = "bl64";
-                        break;
-                    default:
-                        throw new CompileException($"NDK unsupport {abi}");
-                }
-                var outputSoPath = $"{outputPath}/{abi}/libbootloader.so";
+                    string filename;
+                    var outputPath = $"{workspace}/output";
+                    switch (abi)
+                    {
+                        case "armeabi":
+                            filename = "bl32";
+                            break;
+                        case "arm64-v8a":
+                            filename = "bl64";
+                            break;
+                        default:
+                            throw new CompileException($"NDK unsupport {abi}");
+                    }
+                    var outputSoPath = $"{outputPath}/{abi}/libbootloader.so";
 
-                var buildSpace = $"{workspace}/buildSpace";
-                if (Directory.Exists(buildSpace))
-                {
-                    Directory.Delete(buildSpace, true);
+                    var buildSpace = $"{workspace}/buildSpace";
+                    if (Directory.Exists(buildSpace))
+                    {
+                        Directory.Delete(buildSpace, true);
+                    }
+                    Directory.CreateDirectory(buildSpace);
+                    CompilerHelper.DirectoryCopy(sourceCodePath, buildSpace);
+                    CompilerHelper.NdkBuild(abi, buildSpace, outputPath);
+                    var targetSoPath = $"{soPath}/{filename}";
+                    File.Copy(outputSoPath, targetSoPath);
+                    outputMap.Add(targetSoPath, filename);
                 }
-                Directory.CreateDirectory(buildSpace);
-                CompilerHelper.DirectoryCopy(sourceCodePath, buildSpace);
-
-                CompilerHelper.NdkBuild(abi, buildSpace, outputPath);
-                var targetSoPath = $"{soPath}/{filename}";
-                File.Copy(outputSoPath, targetSoPath);
-                outputMap.Add(targetSoPath, filename);
+                sw.Stop();
+                logger.LogInformation($"task {taskID} ndk build cost {sw.ElapsedMilliseconds} ms");
             }
+
             var outputID = jobID;
-            foreach (var kv in outputMap)
             {
-                var blobPath = $"{targetPath}/{version}/{taskID}/{outputID}/{kv.Value}";
-                await CompilerHelper.UploadOutputAsync(kv.Key, blobPath);
+                var sw = Stopwatch.StartNew();
+                foreach (var kv in outputMap)
+                {
+                    var blobPath = $"{targetPath}/{version}/{taskID}/{outputID}/{kv.Value}";
+                    await CompilerHelper.UploadOutputAsync(kv.Key, blobPath);
+                }
+                sw.Stop();
+                logger.LogInformation($"task {taskID} upload to blob cost {sw.ElapsedMilliseconds} ms");
             }
             if (Directory.Exists(workspace))
             {
