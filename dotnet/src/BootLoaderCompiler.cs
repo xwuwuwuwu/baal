@@ -15,7 +15,6 @@ namespace AzureBootloaderCompiler
 {
     public static class BootLoaderCompiler
     {
-        public const int SEPARATE_NUMBER= 10000;
         public static IEnumerable<string> ABIS = new List<string>() { "armeabi", "arm64-v8a" };
 
         [FunctionName("BootLoaderCompiler")]
@@ -51,6 +50,7 @@ namespace AzureBootloaderCompiler
             var jobID = jobIDToken.ToObject<string>();
             var sourcePath = sourcePathToken.ToObject<string>();
             var targetPath = targetPathToken.ToObject<string>();
+            var separateNumber = CompilerHelper.GetSeparateNumber();
             if (string.IsNullOrWhiteSpace(version))
             {
                 throw new CompileException($"version is empty");
@@ -71,11 +71,14 @@ namespace AzureBootloaderCompiler
             {
                 throw new CompileException($"targetPath is empty");
             }
-
+            if (separateNumber <= 1000)
+            {
+                throw new CompileException($"separate number error");
+            }
             var workspace = $"/tmp/bootloader/{version}/{taskID}/{jobID}";
             try
             {
-                await BuildAsync(logger, version, taskID, jobID, sourcePath, targetPath, workspace);
+                await BuildAsync(logger, version, taskID, jobID, sourcePath, targetPath, workspace, separateNumber);
             }
             catch (AggregateException ae)
             {
@@ -98,7 +101,9 @@ namespace AzureBootloaderCompiler
             logger.LogInformation($"cast : {sw.ElapsedMilliseconds} ms, version : {version}, taskID : {taskID}, jobID : {jobID} success");
         }
 
-        private static async Task BuildAsync(Microsoft.Extensions.Logging.ILogger logger, string version, string taskID, string jobID, string sourcePath, string targetPath, string workspace)
+        private static async Task BuildAsync(Microsoft.Extensions.Logging.ILogger logger, string version, 
+            string taskID, string jobID, string sourcePath, 
+            string targetPath, string workspace, int separateNumber)
         {
             if (Directory.Exists(workspace))
             {
@@ -174,7 +179,7 @@ namespace AzureBootloaderCompiler
             {
                 var sw = Stopwatch.StartNew();
                 var jobNumber = int.Parse(jobID);
-                var index = jobNumber / SEPARATE_NUMBER;
+                var index = jobNumber / separateNumber;
                 foreach (var kv in outputMap)
                 {
                     var blobPath = $"{targetPath}/{version}/{taskID}/{jobNumber}/{outputID}/{kv.Value}";

@@ -125,5 +125,11 @@ namespace AzureBootloaderCompiler
         {
             return LogManager.GetLogger(taskID);
         }
+
+        public static int GetSeparateNumber()
+        {
+            var separateNumber = Environment.GetEnvironmentVariable("separate_number");
+            return int.Parse(separateNumber);
+        }
     }
 }
