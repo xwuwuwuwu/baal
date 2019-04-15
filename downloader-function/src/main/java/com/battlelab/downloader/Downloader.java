@@ -22,9 +22,12 @@ public class Downloader {
     private static final String DOWNLOADER_URIS_FORMATTER = "DownloaderUris_V%d";
     private static final String TARGET_PATH = "target_path";
     private static final String AZURE_WEB_JOBS_STORAGE = "AzureWebJobsStorage";
-    public static final int TOKEN_EXPIRED_SECONDS = 60 * 5;
-    public static final int GET_URL_EXPIRED_SECONDS = 30;
-    public static final int ELF_DEFAULT_TAG_LENGTH = 64;
+    private static final int TOKEN_EXPIRED_SECONDS = 60 * 5;
+    private static final int GET_URL_EXPIRED_SECONDS = 30;
+    private static final int ELF_DEFAULT_TAG_LENGTH = 64;
+
+    private static final int DEFAULT_BOOTLOADER_BLOCK_SIZE = 10000;
+
 
     private static final List<String> ABIS = Arrays.asList("armeabi", "armeabi-v7a", "arm64-v8a");
     private static List<String> ABIS_32 = Arrays.asList("armeabi", "armeabi-v7a");
@@ -222,7 +225,8 @@ public class Downloader {
     }
 
     private String getTargetBlobName(String taskId, int index, boolean x64, String version) {
-        return String.format("%s/%s/%d/%s", version, taskId, index, x64 ? "bl64" : "bl32");
+        int blockIndex = (index / DEFAULT_BOOTLOADER_BLOCK_SIZE) * DEFAULT_BOOTLOADER_BLOCK_SIZE;
+        return String.format("%s/%s/%d/%d/%s", version, taskId, blockIndex, index, x64 ? "bl64" : "bl32");
     }
 
     private String getDownloaderPrefixUri(int version) {
