@@ -15,6 +15,7 @@ namespace AzureBootloaderCompiler
 {
     public static class BootLoaderCompiler
     {
+        public const int SEPARATE_NUMBER= 10000;
         public static IEnumerable<string> ABIS = new List<string>() { "armeabi", "arm64-v8a" };
 
         [FunctionName("BootLoaderCompiler")]
@@ -172,9 +173,11 @@ namespace AzureBootloaderCompiler
             var outputID = jobID;
             {
                 var sw = Stopwatch.StartNew();
+                var jobNumber = int.Parse(jobID);
+                var index = jobNumber / SEPARATE_NUMBER;
                 foreach (var kv in outputMap)
                 {
-                    var blobPath = $"{targetPath}/{version}/{taskID}/{outputID}/{kv.Value}";
+                    var blobPath = $"{targetPath}/{version}/{taskID}/{jobNumber}/{outputID}/{kv.Value}";
                     await CompilerHelper.UploadOutputAsync(kv.Key, blobPath);
                 }
                 sw.Stop();
