@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.438
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureBootloaderCompiler", "AzureBootloaderCompiler.csproj", "{C79CBBBF-39A4-4A77-8E73-D2BE5F81E5A4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6E50AE1A-83AD-4CE4-AE63-81A368887DF6}"
+	ProjectSection(SolutionItems) = preProject
+		..\azure-build.sh = ..\azure-build.sh
+		..\Dockerfile = ..\Dockerfile
+		..\env = ..\env
+		..\job.json = ..\job.json
+		..\readme.MD = ..\readme.MD
+		..\sources.list = ..\sources.list
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "base", "base", "{20388CF6-1884-4D83-A18C-0CA39A0CB745}"
+	ProjectSection(SolutionItems) = preProject
+		..\docker\Dockerfile = ..\docker\Dockerfile
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C79CBBBF-39A4-4A77-8E73-D2BE5F81E5A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C79CBBBF-39A4-4A77-8E73-D2BE5F81E5A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C79CBBBF-39A4-4A77-8E73-D2BE5F81E5A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C79CBBBF-39A4-4A77-8E73-D2BE5F81E5A4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{20388CF6-1884-4D83-A18C-0CA39A0CB745} = {6E50AE1A-83AD-4CE4-AE63-81A368887DF6}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0E24ADD5-1B8B-41F0-BDB8-33A41AA5331B}
+	EndGlobalSection
+EndGlobal

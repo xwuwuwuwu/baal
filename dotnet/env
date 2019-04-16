@@ -1,0 +1,3 @@
+AzureWebJobsStorage=DefaultEndpointsProtocol=https;AccountName=labfuncteststorage;AccountKey=HVYI+78tq3yugVqOnzHGILUYRE+8CkvEBY3Nau2oOsWd++CPe5ZgCwBzaXk2QLvPtjbNYbFTjXNrIT0hnYtBUA==;EndpointSuffix=core.windows.net
+RedisConnectionString=bootloader.redis.cache.windows.net:6379,password=EDH7IeVEO8BZ9wu9KPLwTCydCUPpPLGcsxnvnwKVEWw=,ssl=False,abortConnect=False
+APPINSIGHTS_INSTRUMENTATIONKEY=c28c223f-30a3-4210-be0b-e9355a6b8628
