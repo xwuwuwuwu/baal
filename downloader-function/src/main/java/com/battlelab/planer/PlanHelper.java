@@ -4,19 +4,24 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageException;
+import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.queue.CloudQueue;
 import com.microsoft.azure.storage.queue.CloudQueueClient;
 import com.microsoft.azure.storage.queue.CloudQueueMessage;
 import com.microsoft.azure.storage.table.*;
 import org.apache.commons.lang3.time.StopWatch;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 /**
@@ -24,29 +29,18 @@ import java.util.stream.StreamSupport;
  */
 public class PlanHelper {
 
+    public static final int DEFAULT_STEP = 10000;
+
     public static void plan(Logger logger) {
         logger.entering("com.lab.azure.bootloader.PlanHelper.plan", "run");
-        StorageHelper.Settings settings = StorageHelper.Settings.load();
         logger.info("begin");
-        String key = "bootloader_plan_lock";
         try {
             StopWatch sw = new StopWatch();
             sw.start();
-            for (; ; ) {
-                if (StorageHelper.isTimeout(sw, 5 * 60)) {
-                    logger.info("time out");
-                    return;
-                }
-                try {
-                    boolean done = PlanHelper.doPlan(logger);
-                    if (done) {
-                        return;
-                    }
-                } catch (StorageException e) {
-                    logger.log(Level.SEVERE, "error", e);
-                }
-            }
-        } catch (InvalidKeyException | URISyntaxException e) {
+            PlanHelper.doPlan(logger);
+            sw.stop();
+            logger.info(String.format("plan cost %d ms", sw.getTime()));
+        } catch (InvalidKeyException | URISyntaxException | StorageException e) {
             logger.log(Level.SEVERE, "error", e);
         } finally {
             logger.info("end");
@@ -68,47 +62,75 @@ public class PlanHelper {
         CloudTable jobHistoryTable = tableClient.getTableReference(settings.getJobHistoryTableName());
         jobHistoryTable.createIfNotExists();
 
+        JobEntity plan = null;
 
-        TableQuery<JobEntity> query = TableQuery.from(JobEntity.class).take(8);
-        Iterable<JobEntity> entities = jobTable.execute(query);
+        {
+            TableQuery<JobEntity> query = TableQuery.from(JobEntity.class).take(8);
+            Iterable<JobEntity> entities = jobTable.execute(query);
 
-        List<JobEntity> es = StreamSupport.stream(entities.spliterator(), false).collect(Collectors.toList());
-        if (es.isEmpty()) {
-            return true;
+            List<JobEntity> es = StreamSupport.stream(entities.spliterator(), false).collect(Collectors.toList());
+            if (!es.isEmpty()) {
+                es.sort(Comparator.comparing(JobEntity::getCreateAt));
+                plan = es.get(0);
+            }
         }
 
-        for (JobEntity i : entities) {
+        if (plan == null) {
+            logger.info("no plan");
+            return true;
+        }
+        int step = settings.getStepAsInteger();
+        if (step <= 0) {
+            step = DEFAULT_STEP;
+        }
+        {
+            String targetPath = settings.getTargetPath();
+            URI uri = URI.create(targetPath);
+            CloudBlobContainer blobContainer = new CloudBlobContainer(uri, account.getCredentials());
 
-            Gson gson = new Gson();
-            String jsonString = gson.toJson(i);
-            logger.info(jsonString);
+            int section = plan.getCurrent() / step;
 
-            if (i.current >= i.amount) {
-                TableOperation delete = TableOperation.delete(i);
-                jobTable.execute(delete);
-                i.updateTimestamp();
-                TableOperation insertOrMerge = TableOperation.insertOrMerge(i);
-                jobHistoryTable.execute(insertOrMerge);
+            String path = String.format("%s/%s/%d/", plan.version, plan.getPartitionKey(), section * step);
+            long fileCount = StorageHelper.getBlobFileCount(blobContainer, path, settings.getMaxResultAsInteger());
+            if (fileCount <= settings.getStepThresholdAsInteger()) {
+                logger.info(String.format("file count %d less than step threshold", fileCount));
                 return true;
-            } else {
-                int start = i.current;
-                i.current += 1000;
-                i.updateTimestamp();
-                TableOperation insertOrMerge = TableOperation.insertOrMerge(i);
-                jobTable.execute(insertOrMerge);
-                makeQueueMessage(jobQueue, i, start, 1000, settings.getSourcePath(), settings.getTargetPath());
-
             }
+        }
+
+
+        Gson gson = new Gson();
+        String jsonString = gson.toJson(plan);
+        logger.info(jsonString);
+
+        if (plan.current >= plan.amount) {
+            TableOperation delete = TableOperation.delete(plan);
+            jobTable.execute(delete);
+            plan.updateTimestamp();
+            TableOperation insertOrMerge = TableOperation.insertOrMerge(plan);
+            jobHistoryTable.execute(insertOrMerge);
+            return true;
+        } else {
+            int start = plan.current;
+            plan.current += step;
+            plan.updateTimestamp();
+            TableOperation insertOrMerge = TableOperation.insertOrMerge(plan);
+            jobTable.execute(insertOrMerge);
+            makeQueueMessageAsync(jobQueue, plan, start, step, settings.getSourcePath(), settings.getTargetPath());
+
         }
         logger.info("stop doplan");
         return false;
     }
 
-    private static void makeQueueMessage(CloudQueue cloudQueue, JobEntity jobEntity, int start, int count, String sourcePath, String targetPath) {
-        for (int i = 0; i < count; i++) {
+    private static int makeQueueMessageAsync(CloudQueue cloudQueue, JobEntity jobEntity, int start, int count, String sourcePath, String targetPath) {
+
+        AtomicInteger errorCounter = new AtomicInteger();
+
+        IntStream.range(start, start + count).parallel().forEach(i -> {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("taskID", jobEntity.getPartitionKey());
-            jsonObject.addProperty("jobID", start + i);
+            jsonObject.addProperty("jobID", i);
             jsonObject.addProperty("version", jobEntity.getVersion());
             jsonObject.addProperty("sourcePath", sourcePath);
             jsonObject.addProperty("targetPath", targetPath);
@@ -116,8 +138,10 @@ public class PlanHelper {
             try {
                 cloudQueue.addMessage(message);
             } catch (StorageException e) {
+                errorCounter.incrementAndGet();
             }
-        }
+        });
+        return errorCounter.get();
     }
 
 
