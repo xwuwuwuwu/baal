@@ -19,10 +19,10 @@
     <name>Azure Java Functions</name>
 
     <properties>
-        <functionAppName>lab-test-download-func</functionAppName>
+        <functionAppName>apilarity</functionAppName>
         <functionAppRegion>EastAsia</functionAppRegion>
         <stagingDirectory>${project.build.directory}/azure-functions/${functionAppName}</stagingDirectory>
-        <functionResourceGroup>LabTestOnly-RemoveAsYouWant</functionResourceGroup>
+        <functionResourceGroup>apilarity</functionResourceGroup>
     </properties>
 
     <repositories>
