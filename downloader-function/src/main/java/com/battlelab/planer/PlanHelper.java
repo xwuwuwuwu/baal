@@ -92,7 +92,7 @@ public class PlanHelper {
 
             String path = String.format("%s/%s/%d/", plan.version, plan.getPartitionKey(), section * step);
             long fileCount = StorageHelper.getBlobFileCount(blobContainer, path, settings.getMaxResultAsInteger());
-            if (fileCount <= settings.getStepThresholdAsInteger()) {
+            if (fileCount <= settings.getStepThresholdAsInteger() && fileCount > 0) {
                 logger.info(String.format("file count %d less than step threshold", fileCount));
                 return true;
             }
@@ -112,12 +112,17 @@ public class PlanHelper {
             return true;
         } else {
             int start = plan.current;
-            plan.current += step;
+            int current = plan.current + step;
+
+            int count = step;
+            if (current > plan.getAmount()) {
+                count = plan.amount - plan.current;
+                plan.current = plan.amount;
+            }
             plan.updateTimestamp();
             TableOperation insertOrMerge = TableOperation.insertOrMerge(plan);
             jobTable.execute(insertOrMerge);
-            makeQueueMessageAsync(jobQueue, plan, start, step, settings.getSourcePath(), settings.getTargetPath());
-
+            makeQueueMessageAsync(jobQueue, plan, start, count, settings.getSourcePath(), settings.getTargetPath());
         }
         logger.info("stop doplan");
         return false;
