@@ -182,7 +182,7 @@ namespace AzureBootloaderCompiler
                 var index = jobNumber / separateNumber;
                 foreach (var kv in outputMap)
                 {
-                    var blobPath = $"{targetPath}/{version}/{taskID}/{index}/{outputID}/{kv.Value}";
+                    var blobPath = $"{targetPath}/{version}/{taskID}/{index * separateNumber}/{outputID}/{kv.Value}";
                     await CompilerHelper.UploadOutputAsync(kv.Key, blobPath);
                 }
                 sw.Stop();
