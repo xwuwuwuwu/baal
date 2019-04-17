@@ -8,9 +8,13 @@ import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.*;
 import com.microsoft.azure.storage.StorageException;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.security.InvalidKeyException;
 import java.util.*;
+import java.util.logging.Logger;
 
 public class Downloader {
 
@@ -41,15 +45,17 @@ public class Downloader {
                     methods = {HttpMethod.POST},
                     authLevel = AuthorizationLevel.ANONYMOUS)
                     HttpRequestMessage<Optional<String>> request,
-            final ExecutionContext context) {
+            final ExecutionContext context) throws UnsupportedEncodingException {
         long start = System.currentTimeMillis();
 
-        context.getLogger().info("Java UrlGenerator trigger processed a request.");
+        Logger logger = context.getLogger();
+
+        logger.info("UrlGenerator : starts.");
 
         Optional<String> body = request.getBody();
 
         if (!body.isPresent()) {
-            context.getLogger().info("Java UrlGenerator trigger no request body.");
+            logger.info("UrlGenerator : no request body.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
                     .body("no body.").build();
         }
@@ -57,7 +63,7 @@ public class Downloader {
         String eTag = request.getHeaders().get("etag");
 
         if (eTag == null || eTag.isEmpty()) {
-            context.getLogger().info("Java UrlGenerator trigger no ETag.");
+            logger.info("UrlGenerator : no ETag.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
                     .body("no ETag.").build();
         }
@@ -71,19 +77,19 @@ public class Downloader {
         long timestamp = jsonObject.get(TIMESTAMP).getAsLong();
 
         if (tag == null || tag.isEmpty() || tag.length() > Constant.MAX_TAG_LENGTH) {
-            context.getLogger().info("Java UrlGenerator trigger no tag.");
+            logger.info("UrlGenerator : no tag.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
                     .body("Please pass a tag on the query string or in the request body").build();
         }
 
         if (abi == null || !validAbi(abi)) {
-            context.getLogger().info("Java UrlGenerator trigger no abi.");
+            logger.info("UrlGenerator : no abi.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
                     .body("Please pass a abi on the query string or in the request body").build();
         }
 
         if ((System.currentTimeMillis() - timestamp) > GET_URL_EXPIRED_SECONDS * 1000) {
-            context.getLogger().info("Java UrlGenerator timeout.");
+            logger.info("UrlGenerator : timeout.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
                     .body("timeout.").build();
         }
@@ -91,7 +97,7 @@ public class Downloader {
         String eTag1 = Sha256Helper.getETag(bodyString, SecretHelper.makeSecret(tag, version));
 
         if (!eTag.equals(eTag1)) {
-            context.getLogger().info("Java UrlGenerator trigger wrong ETag.");
+            logger.info("UrlGenerator : wrong ETag.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
                     .body("wrong ETag.").build();
         }
@@ -101,14 +107,15 @@ public class Downloader {
         values.put(ABI, abi.toLowerCase());
 
         String withTag = JwtTokenHelper.create(values, TOKEN_EXPIRED_SECONDS);
-
-        String s = Base64.getEncoder().encodeToString(withTag.getBytes());
+        logger.info(String.format("UrlGenerator : tag %s , abi %s", tag, abi));
+        //String s = Base64.getEncoder().encodeToString(withTag.getBytes());
+        String s = URLEncoder.encode(withTag, "UTF-8");
         String prefix = getDownloaderPrefixUri(version);
         String formatter = prefix.endsWith("/") ? "http://%s%s" : "http://%s/%s";
 
         HttpResponseMessage response = request.createResponseBuilder(HttpStatus.OK)
                 .body(String.format(formatter, prefix, s)).build();
-        context.getLogger().info("UrlGenerator cost : " + (System.currentTimeMillis() - start));
+        logger.info("UrlGenerator : cost " + (System.currentTimeMillis() - start));
         return response;
     }
 
@@ -135,11 +142,14 @@ public class Downloader {
                     partitionKey = "{version}",
                     rowKey = "latest")
                     String configuration,
-            final ExecutionContext context) {
+            final ExecutionContext context) throws UnsupportedEncodingException {
         long start = System.currentTimeMillis();
-        context.getLogger().info("Java download trigger processed a request.");
+        Logger logger = context.getLogger();
 
-        String t = new String(Base64.getDecoder().decode(token.getBytes()));
+        logger.info("download : start.");
+
+        //String t = new String(Base64.getDecoder().decode(token.getBytes()));
+        String t = URLDecoder.decode(token, "UTF-8");
 
         DecodedJWT decodedJWT = JwtTokenHelper.verifyToken(t);
 
@@ -147,7 +157,8 @@ public class Downloader {
         String abi = decodedJWT.getClaim(ABI).asString();
 
         boolean x64 = ABIS_64.contains(abi);
-        context.getLogger().info("Java download trigger tag" + tag);
+
+        logger.info(String.format("download : tag %s , abi %s .", tag, abi));
 
         JsonObject jsonObject = gson.fromJson(configuration, JsonObject.class);
         String taskId = jsonObject.get("TaskId").getAsString();
@@ -167,7 +178,7 @@ public class Downloader {
         }
 
         HttpResponseMessage build = request.createResponseBuilder(HttpStatus.OK).body(target).build();
-        context.getLogger().info("Java download cost : " + (System.currentTimeMillis() - start));
+        logger.info("download : cost " + (System.currentTimeMillis() - start));
         return build;
     }
 

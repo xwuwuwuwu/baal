@@ -17,23 +17,6 @@ public class SecretGenerator {
 
     private static final int CURRENT_VERSION = 1;
 
-    @FunctionName("secret")
-    public HttpResponseMessage run(
-            @HttpTrigger(name = "req", methods = {HttpMethod.GET, HttpMethod.POST},
-                    authLevel = AuthorizationLevel.ANONYMOUS,
-                    route = "v1/secret")
-                    HttpRequestMessage<Optional<String>> request,
-            final ExecutionContext context) {
-        String tag = request.getQueryParameters().get("tag");
-        if (tag == null || tag.isEmpty() || tag.length() > Constant.MAX_TAG_LENGTH) {
-            return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-                    .body("Please pass a tag on the query string or in the request body").build();
-        }
-
-        return request.createResponseBuilder(HttpStatus.OK)
-                .body(SecretHelper.makeSecret(tag, CURRENT_VERSION)).build();
-    }
-
     @FunctionName("doc")
     public HttpResponseMessage makeDoc(
             @HttpTrigger(name = "req", methods = {HttpMethod.GET, HttpMethod.POST},
@@ -52,14 +35,14 @@ public class SecretGenerator {
         ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
         ZipEntry secretEntry = new ZipEntry("secret.txt");
         zipOutputStream.putNextEntry(secretEntry);
-        zipOutputStream.write(String.format("tag=%S\nsecret=%s\n",tag,secret).getBytes());
+        zipOutputStream.write(String.format("tag=%s\nsecret=%s\n", tag, secret).getBytes());
         ZipEntry rEntry = new ZipEntry("readme.md");
         zipOutputStream.putNextEntry(rEntry);
         InputStream resourceAsStream = getClass().getResourceAsStream("/doc.md");
         byte[] buffer = new byte[2048];
         int readLen = 0;
-        while ((readLen = resourceAsStream.read(buffer))!= -1){
-            zipOutputStream.write(buffer,0,readLen);
+        while ((readLen = resourceAsStream.read(buffer)) != -1) {
+            zipOutputStream.write(buffer, 0, readLen);
         }
         resourceAsStream.close();
         zipOutputStream.close();

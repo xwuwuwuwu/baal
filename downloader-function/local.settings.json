@@ -1,16 +1,15 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=labfuncteststorage;AccountKey=HVYI+78tq3yugVqOnzHGILUYRE+8CkvEBY3Nau2oOsWd++CPe5ZgCwBzaXk2QLvPtjbNYbFTjXNrIT0hnYtBUA==;EndpointSuffix=core.windows.net",
-    "AzureWebJobsStorageDestContainer": "testtarget",
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=millionlize;AccountKey=/RVs5ynXEReL+z9ERbYAfIJpM/zzTI8zkAbiXhyv95XbxjACDDU+DkZgyCqg24Y0fy+XYspIISAL927XKK9Owg==;EndpointSuffix=core.windows.net",
     "FUNCTIONS_WORKER_RUNTIME": "java",
-    "DownloaderUris_V1": "127.0.0.1:7071/api/download/v1/,127.0.0.1:7071/api/download/v1/",
+    "DownloaderUris_V1": "127.0.0.1:7071/download/v1/,127.0.0.1:7071/download/v1/",
     "job_queue": "test1jobs",
     "job_table": "test1jobs",
     "job_history_table": "test1jobhistory",
     "deploy_table": "test1deploy",
     "source_path": "https://labfuncteststorage.blob.core.windows.net/source/bootloader.zip",
-    "target_path": "https://labfuncteststorage.blob.core.windows.net/test1target"
+    "target_path": "https://millionlize.blob.core.windows.net/bootloaderstorage"
   },
   "extensions": {
     "http": {
