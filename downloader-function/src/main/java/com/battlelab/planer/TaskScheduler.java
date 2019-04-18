@@ -11,7 +11,7 @@ import com.microsoft.azure.functions.annotation.TimerTrigger;
 public class TaskScheduler {
     @FunctionName("TaskScheduler")
     public static void run(
-            @TimerTrigger(name = "timerInfo", schedule = "0 */1 * * * *") String timerInfo,
+            @TimerTrigger(name = "timerInfo", schedule = "0 */2 * * * *") String timerInfo,
             final ExecutionContext context) throws InterruptedException {
         PlanHelper.plan(context.getLogger());
     }
