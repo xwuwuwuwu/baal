@@ -118,6 +118,8 @@ public class PlanHelper {
             if (current > plan.getAmount()) {
                 count = plan.amount - plan.current;
                 plan.current = plan.amount;
+            } else {
+                plan.current += step;
             }
             plan.updateTimestamp();
             TableOperation insertOrMerge = TableOperation.insertOrMerge(plan);
