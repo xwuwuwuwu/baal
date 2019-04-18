@@ -43,8 +43,10 @@ public class Downloader {
     public HttpResponseMessage run(
             @HttpTrigger(name = "req",
                     methods = {HttpMethod.POST},
-                    authLevel = AuthorizationLevel.ANONYMOUS)
+                    authLevel = AuthorizationLevel.ANONYMOUS,
+                    route = "{version}/UrlGenerator")
                     HttpRequestMessage<Optional<String>> request,
+            @BindingName("version") String version,
             final ExecutionContext context) throws UnsupportedEncodingException {
         long start = System.currentTimeMillis();
 
@@ -73,7 +75,7 @@ public class Downloader {
         JsonObject jsonObject = gson.fromJson(bodyString, JsonObject.class);
         String tag = jsonObject.get(TAG).getAsString();
         String abi = jsonObject.get(ABI).getAsString();
-        int version = jsonObject.get(VERSION).getAsInt();
+        int versionInt = Integer.parseInt(version.substring(1));
         long timestamp = jsonObject.get(TIMESTAMP).getAsLong();
 
         if (tag == null || tag.isEmpty() || tag.length() > Constant.MAX_TAG_LENGTH) {
@@ -110,7 +112,7 @@ public class Downloader {
         logger.info(String.format("UrlGenerator : tag %s , abi %s", tag, abi));
         //String s = Base64.getEncoder().encodeToString(withTag.getBytes());
         String s = URLEncoder.encode(withTag, "UTF-8");
-        String prefix = getDownloaderPrefixUri(version);
+        String prefix = getDownloaderPrefixUri(versionInt);
         String formatter = prefix.endsWith("/") ? "http://%s%s" : "http://%s/%s";
 
         HttpResponseMessage response = request.createResponseBuilder(HttpStatus.OK)
