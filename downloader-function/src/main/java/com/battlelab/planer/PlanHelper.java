@@ -14,9 +14,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,6 +28,7 @@ import java.util.stream.StreamSupport;
 public class PlanHelper {
 
     public static final int DEFAULT_STEP = 10000;
+    public static final int QUEUE_SIZE = 4;
 
     public static void plan(Logger logger) {
         logger.entering("com.lab.azure.bootloader.PlanHelper.plan", "run");
@@ -55,8 +54,18 @@ public class PlanHelper {
         CloudStorageAccount account = CloudStorageAccount.parse(settings.getAzureWebJobsStorage());
         CloudTableClient tableClient = account.createCloudTableClient();
         CloudQueueClient queueClient = account.createCloudQueueClient();
-        CloudQueue jobQueue = queueClient.getQueueReference(settings.getJobQueueName());
-        jobQueue.createIfNotExists();
+
+        Map<Integer, CloudQueue> queueMap = new HashMap<>(4);
+
+        {
+            for (int i = 0; i < QUEUE_SIZE; i++) {
+                String queueName = String.format("%s%d", settings.getJobQueueName(), i);
+                CloudQueue jobQueue = queueClient.getQueueReference(queueName);
+                jobQueue.createIfNotExists();
+                queueMap.put(i, jobQueue);
+            }
+        }
+
         CloudTable jobTable = tableClient.getTableReference(settings.getJobTableName());
 
         CloudTable jobHistoryTable = tableClient.getTableReference(settings.getJobHistoryTableName());
@@ -124,13 +133,13 @@ public class PlanHelper {
             plan.updateTimestamp();
             TableOperation insertOrMerge = TableOperation.insertOrMerge(plan);
             jobTable.execute(insertOrMerge);
-            makeQueueMessageAsync(jobQueue, plan, start, count, settings.getSourcePath(), settings.getTargetPath());
+            makeQueueMessageAsync(queueMap, plan, start, count, settings.getSourcePath(), settings.getTargetPath());
         }
         logger.info("stop doplan");
         return false;
     }
 
-    private static int makeQueueMessageAsync(CloudQueue cloudQueue, JobEntity jobEntity, int start, int count, String sourcePath, String targetPath) {
+    private static int makeQueueMessageAsync(Map<Integer, CloudQueue> queueMap, JobEntity jobEntity, int start, int count, String sourcePath, String targetPath) {
 
         AtomicInteger errorCounter = new AtomicInteger();
 
@@ -143,6 +152,8 @@ public class PlanHelper {
             jsonObject.addProperty("targetPath", targetPath);
             CloudQueueMessage message = new CloudQueueMessage(jsonObject.toString());
             try {
+                int order = i % QUEUE_SIZE;
+                CloudQueue cloudQueue = queueMap.get(order);
                 cloudQueue.addMessage(message);
             } catch (StorageException e) {
                 errorCounter.incrementAndGet();
