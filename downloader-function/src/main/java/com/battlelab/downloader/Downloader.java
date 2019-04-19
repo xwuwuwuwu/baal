@@ -26,7 +26,7 @@ public class Downloader {
     private static final String DOWNLOADER_URIS_FORMATTER = "DownloaderUris_V%d";
     private static final String TARGET_PATH = "target_path";
     private static final String AZURE_WEB_JOBS_STORAGE = "AzureWebJobsStorage";
-    private static final int TOKEN_EXPIRED_SECONDS = 60 * 5;
+    private static final int TOKEN_EXPIRED_SECONDS = 60 * 10;
     private static final int GET_URL_EXPIRED_SECONDS = 30;
     private static final int ELF_DEFAULT_TAG_LENGTH = 64;
 
@@ -96,7 +96,7 @@ public class Downloader {
                     .body("timeout.").build();
         }
 
-        String eTag1 = Sha256Helper.getETag(bodyString, SecretHelper.makeSecret(tag, version));
+        String eTag1 = Sha256Helper.getETag(bodyString, SecretHelper.makeSecret(tag, versionInt));
 
         if (!eTag.equals(eTag1)) {
             logger.info("UrlGenerator : wrong ETag.");

@@ -14,11 +14,11 @@
    响应报文      | 指 HTTP Response Body
    GET 方法     | 从指定的资源请求数据
    POST 方法    | 向指定的资源提交要被处理的数据
-   json         | 轻量级的数据交换格式, 例如 {"firstName": "Json"}
+   JSON         | 轻量级的数据交换格式, 例如 {"firstName": "Json"}
    可执行文件    | 客户端可以加载并运行的sdk文件
    贵司服务器    | 指对接此sdk的公司的自有的服务器
    我司服务器    | 指此sdk提供者的服务器
-   
+   HmacSHA256 算法  | 利用哈希算法，以一个密钥和一个消息为输入，生成一个消息摘要作为输出
    
 ##标签和秘钥
 
@@ -39,20 +39,21 @@
     3. 贵司服务器通过HTTP POST请求访问我司服务器的资源生成接口, 获取客户端的可执行文件的下载链接
     4. 贵司服务器可以直接下载此资源,然后直接下发二进制资源到客户端，也可以下发此链接到客户端, 客户端下载二进制后加载执行, 此处不做固定要求
     
+>**注意: 接口返回的资源下载链接地址在10分钟内有效, 请尽快下载**
+    
 ####构建请求报文
 
-* 请求报文是基于json格式,数据格式如下
+* 请求报文是基于JSON格式,数据格式如下
 
    字段      | 类型          | 描述
    :---------|:-------------|---------------
-   abi       |String        | 手机端的abi,获取方式参考 
+   abi       |String        | 手机端的abi,获取方式参考下文 获取客户端abi
    tag       |String        | 我司分配标签,从secret.txt中可以获取
    timestamp |long          | utc的服务器当前时间戳
-   v         |int           | 当前版本, 固定为 1
    
    > 例如
    ```
-   {"tag":"SH_TEST_TAG","abi":"armeabi","timestamp":1554793814200,"v":1}
+   {"tag":"SH_TEST_TAG","abi":"armeabi","timestamp":1555575945221}
    ```
    
    >abi请自行收集上传到客户服务器,abi获取方法参见下文 获取客户端abi
@@ -63,10 +64,16 @@
     
     >>**注意: ETAG和body是相关联的, 请求body发生变化时,必须重新生成ETAG**
     
-    > 获取的算法 java 版本实现如下,如果客户服务器是其他语言实现, 请自行编写相同的算法
-    >> body: 请求的报文
+    >生成ETag的方法如下
+    >>算法: HmacSHA256 
+    >>算法使用的密钥: 具体值为secret.txt 中 secret 的值
+    >>算法的输入数据: 请求的报文
+    >>算法的输出数据: 输出的数据即为 通信需要的ETag
     
+    > HmacSHA256算法 java 版本实现如下,如果贵司服务器是其他语言实现, 请自行编写相同的算法
+    >> body: 请求的报文
     >> secret: 请求使用的加密秘钥, 具体值从secret.txt 获取
+    >> 返回值: ETag
     ```
         public String getETag(String body, String secret) {
             try {
@@ -97,44 +104,40 @@
     ```
     >生成的ETag 示例如下
     ```
-    6FFF0789F2BCE8B3B9987DE3DFDADE9ABFDCDCBE5B7C120C283E0EAC5C69B53E
+    92BC0C898FBFA43C8D88F9DD7DB046AFD112112E957250F8189FD92D75FFF203
     ```
 
 * 资源生成接口
 
-    >接口地址: apilarity.azurewebsites.net/UrlGenerator
+    >接口地址: api.lykdrli.com 
     
     >本接口仅接受 POST 请求方式。上文生成的ETag必须作为请求报头的一部分传入并且遵循 HTTP 基本认证的协议规范。
     
     >示例原始的HTTP 请求如下:
     ```
-    POST /api/UrlGenerator HTTP/1.1\r\n
-    ETag: 77D92259BB45D9A33D42FB6F4BE6CCB02CB71500C0244DAD6DE7EEE189D5EBE3\r\n
-    User-Agent: Java/1.8.0_201\r\n
-    Host: lab-test-download.azurewebsites.net\r\n
-    Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2\r\n
-    Connection: keep-alive\r\n
-    Content-type: application/x-www-form-urlencoded\r\n
-    Content-Length: 69\r\n
-    \r\n
-    {"tag":"SH_TEST_TAG","abi":"armeabi","timestamp":1554803801385,"v":1}
+    POST / HTTP/1.1
+    ETag: 77D92259BB45D9A33D42FB6F4BE6CCB02CB71500C0244DAD6DE7EEE189D5EBE3
+    Host: lab-test-download.azurewebsites.net
+    Connection: keep-alive
+    Content-Length: 69
+    
+    {"tag":"SH_TEST_TAG","abi":"armeabi","timestamp":1554803801385}
     
     ```
     
     >原始 HTTP 响应网络封包示例如下:
     ```
-    HTTP/1.1 200 OK\r\n
-    Content-Length: 263\r\n
-    Content-Type: text/plain; charset=utf-8\r\n
-    Date: Tue, 09 Apr 2019 09:56:51 GMT\r\n
-    \r\n
+    HTTP/1.1 200 OK
+    Content-Length: 263
+    Content-Type: text/plain; charset=utf-8
+    
     http://lab-test-download.azurewebsites.net/api/download/v1/ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKSVV6STFOaUo5LmV5SmhZbWtpT2lKaGNtMWxZV0pwSWl3aWRHRm5Jam9pVTBoZlZFVlRWRjlVUVVjaUxDSmxlSEFpT2pFMU5UUTRNRFF4TVRGOS5NRXRob2M5Q2V6R0NqRjV
     ```
     
     >响应代码
     >>如果接口调用成功, 相应代码为 200, 对应的响应报文即为客户端可执行文件的下载地址
     
-    >整体流程示例代码如下:
+    >整体流程 java 版本实现示例代码如下, 如果贵司服务器使用其他语言, 请自行参考实现
     
     ```
     package x;
@@ -153,29 +156,34 @@
     
         //示列代码，仅供参考
         public static void main(String[] args) throws IOException {
-            String url = "http://lab-test-download.azurewebsites.net/api/UrlGenerator";
+        
+            //接口地址
+            String url = "http://api.lykdrli.com";
+            //通信秘钥, 从secret.txt获取
             String secret = "e75678742218345f";
+            //标签, 从secret.txt获取
             String tag = "SH_TEST_TAG";
+            //客户端的abi, 请自行从客户端获取,获取方式参考下文 获取客户端abi
             String abi = "armeabi";
+            //当前服务器的时间戳,注意必须是UTC时间
             long timestamp = System.currentTimeMillis();
     
-    
+            //构建 请求报文，数据为JSON格式
             StringBuilder body = new StringBuilder("{");
             body.append(String.format("\"tag\":\"%s\"", tag));
             body.append(String.format(",\"abi\":\"%s\"", abi));
             body.append(String.format(",\"timestamp\":%d", timestamp));
-            body.append(String.format(",\"v\":1", tag));
             body.append("}");
     
             String bodyString = body.toString();
-    
-            System.out.println(bodyString);
-    
+        
+            //生成通信使用的ETag
             String eTag = getETag(bodyString, secret);
         
             Map<String, String> headers = new HashMap<>();
             headers.put("ETag",eTag);
-    
+            
+            //发送请求到远端,此处只是示例代码,正式服务器请重新实现，增加重试和健壮性等
             System.out.println(httpPost(url,bodyString,headers));
     
         }
@@ -203,7 +211,8 @@
                 urlConnection.disconnect();
                 return new String(buffer);
             }
-    
+            
+        //生成ETag算法
         public static String getETag(String body, String secret) {
             try {
                 SecretKeySpec signingKey = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
@@ -260,13 +269,13 @@
         
     ```
     
-* 下载和调用sdk
+* 下载和调用SDK
 
     > 示列代码如下 
     
     ```
    /**
-    * 调用sdk
+    * 调用SDK
     * @param buffer   sdk的二进制buffer
     * @param context  android Context
     */
@@ -290,6 +299,7 @@
            return;
        }
        System.load(soPath);
+       //SDK 调用成功
    }
     
     //随机生成存储的文件名，更安全
@@ -300,12 +310,12 @@
         for (int i = 0; i < length; i++) {
             builder.append(Character.valueOf((char) (random.nextInt(26) + 97)));
         }
-        builder.append(".so");
         return builder.toString();
     }
     
     /**
-     *
+     * 客户端下载使用的示例代码，下载失败建议重试3次以上, 提高转化率
+     * 示例代码使用的是HttpURLConnection 方式进行下载，具体实现可以使用任何方式，此处不做要求
      * @param url 链接地址
      * @return  下载成功的二进制内容
      */
@@ -326,7 +336,8 @@
             urlConnection.connect();
 
             int responseCode = urlConnection.getResponseCode();
-            if (responseCode != 200 && responseCode != 206) {
+            //判断请求是否成功，因为SDK每次请求都不一样,所以不要下载不要使用断点续传，每次重新下载保存
+            if (responseCode != 200) {
                 return null;
             }
 
