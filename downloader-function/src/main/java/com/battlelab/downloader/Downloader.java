@@ -2,6 +2,7 @@ package com.battlelab.downloader;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.battlelab.Constant;
+import com.battlelab.TraceHelper;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.microsoft.azure.functions.*;
@@ -14,7 +15,6 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.InvalidKeyException;
 import java.util.*;
-import java.util.logging.Logger;
 
 public class Downloader {
 
@@ -36,38 +36,41 @@ public class Downloader {
     private static final List<String> ABIS = Arrays.asList("armeabi", "armeabi-v7a", "arm64-v8a");
     private static List<String> ABIS_32 = Arrays.asList("armeabi", "armeabi-v7a");
     private static List<String> ABIS_64 = Arrays.asList("arm64-v8a");
+    public static final String TASK_ID = "TaskId";
+    public static final String THRESHOLD = "Threshold";
+    public static final String DEPLOY_AT = "DeployAt";
 
     private static Gson gson = new Gson();
 
     @FunctionName("UrlGenerator")
     public HttpResponseMessage run(
-            @HttpTrigger(name = "req",
-                    methods = {HttpMethod.POST},
-                    authLevel = AuthorizationLevel.ANONYMOUS,
-                    route = "{version}/UrlGenerator")
-                    HttpRequestMessage<Optional<String>> request,
-            @BindingName("version") String version,
-            final ExecutionContext context) throws UnsupportedEncodingException {
+        @HttpTrigger(name = "req",
+            methods = {HttpMethod.POST},
+            authLevel = AuthorizationLevel.ANONYMOUS,
+            route = "{version}/UrlGenerator")
+            HttpRequestMessage<Optional<String>> request,
+        @BindingName("version") String version,
+        final ExecutionContext context) throws UnsupportedEncodingException {
         long start = System.currentTimeMillis();
 
-        Logger logger = context.getLogger();
+        TraceHelper trace = new TraceHelper(context.getLogger());
 
-        logger.info("UrlGenerator : starts.");
+        trace.trace("UrlGenerator : starts.");
 
         Optional<String> body = request.getBody();
 
         if (!body.isPresent()) {
-            logger.info("UrlGenerator : no request body.");
+            trace.trace("UrlGenerator : no request body.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-                    .body("no body.").build();
+                .body("no body.").build();
         }
 
         String eTag = request.getHeaders().get("etag");
 
         if (eTag == null || eTag.isEmpty()) {
-            logger.info("UrlGenerator : no ETag.");
+            trace.trace("UrlGenerator : no ETag.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-                    .body("no ETag.").build();
+                .body("no ETag.").build();
         }
 
         String bodyString = body.get();
@@ -79,29 +82,29 @@ public class Downloader {
         long timestamp = jsonObject.get(TIMESTAMP).getAsLong();
 
         if (tag == null || tag.isEmpty() || tag.length() > Constant.MAX_TAG_LENGTH) {
-            logger.info("UrlGenerator : no tag.");
+            trace.trace("UrlGenerator : no tag.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-                    .body("Please pass a tag on the query string or in the request body").build();
+                .body("Please pass a tag on the query string or in the request body").build();
         }
 
         if (abi == null || !validAbi(abi)) {
-            logger.info("UrlGenerator : no abi.");
+            trace.trace("UrlGenerator : no abi.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-                    .body("Please pass a abi on the query string or in the request body").build();
+                .body("Please pass a abi on the query string or in the request body").build();
         }
 
         if ((System.currentTimeMillis() - timestamp) > GET_URL_EXPIRED_SECONDS * 1000) {
-            logger.info("UrlGenerator : timeout.");
+            trace.trace("UrlGenerator : timeout.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-                    .body("timeout.").build();
+                .body("timeout.").build();
         }
 
         String eTag1 = Sha256Helper.getETag(bodyString, SecretHelper.makeSecret(tag, versionInt));
 
         if (!eTag.equals(eTag1)) {
-            logger.info("UrlGenerator : wrong ETag.");
+            trace.trace("UrlGenerator : wrong ETag.");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-                    .body("wrong ETag.").build();
+                .body("wrong ETag.").build();
         }
 
         Map<String, String> values = new HashMap<>();
@@ -109,15 +112,15 @@ public class Downloader {
         values.put(ABI, abi.toLowerCase());
 
         String withTag = JwtTokenHelper.create(values, TOKEN_EXPIRED_SECONDS);
-        logger.info(String.format("UrlGenerator : tag %s , abi %s", tag, abi));
+        trace.info(String.format("UrlGenerator : tag %s , abi %s", tag, abi));
         //String s = Base64.getEncoder().encodeToString(withTag.getBytes());
         String s = URLEncoder.encode(withTag, "UTF-8");
         String prefix = getDownloaderPrefixUri(versionInt);
         String formatter = prefix.endsWith("/") ? "http://%s%s" : "http://%s/%s";
 
         HttpResponseMessage response = request.createResponseBuilder(HttpStatus.OK)
-                .body(String.format(formatter, prefix, s)).build();
-        logger.info("UrlGenerator : cost " + (System.currentTimeMillis() - start));
+            .body(String.format(formatter, prefix, s)).build();
+        trace.trace("UrlGenerator : cost " + (System.currentTimeMillis() - start));
         return response;
     }
 
@@ -132,25 +135,25 @@ public class Downloader {
     @FunctionName("download")
     @StorageAccount(AZURE_WEB_JOBS_STORAGE)
     public HttpResponseMessage download(
-            @HttpTrigger(name = "req",
-                    methods = {HttpMethod.GET, HttpMethod.POST},
-                    authLevel = AuthorizationLevel.ANONYMOUS,
-                    route = "download/{version}/{token}")
-                    HttpRequestMessage<Optional<String>> request,
-            @BindingName("token") String token,
-            @BindingName("version") String version,
-            @TableInput(name = "configuration",
-                    tableName = "deploy",
-                    partitionKey = "{version}",
-                    rowKey = "latest")
-                    String configuration,
-            final ExecutionContext context) throws UnsupportedEncodingException {
+        @HttpTrigger(name = "req",
+            methods = {HttpMethod.GET, HttpMethod.POST},
+            authLevel = AuthorizationLevel.ANONYMOUS,
+            route = "download/{version}/{token}")
+            HttpRequestMessage<Optional<String>> request,
+        @BindingName("token") String token,
+        @BindingName("version") String version,
+        @TableInput(name = "configuration",
+            tableName = "deploy",
+            partitionKey = "{version}",
+            rowKey = "latest")
+            String configuration,
+        final ExecutionContext context) throws UnsupportedEncodingException {
         long start = System.currentTimeMillis();
-        Logger logger = context.getLogger();
 
-        logger.info("download : start.");
+        TraceHelper trace = new TraceHelper(context.getLogger());
 
-        //String t = new String(Base64.getDecoder().decode(token.getBytes()));
+        trace.trace("download : start.");
+
         String t = URLDecoder.decode(token, "UTF-8");
 
         DecodedJWT decodedJWT = JwtTokenHelper.verifyToken(t);
@@ -160,15 +163,15 @@ public class Downloader {
 
         boolean x64 = ABIS_64.contains(abi);
 
-        logger.info(String.format("download : tag %s , abi %s .", tag, abi));
+        trace.info(String.format("download : tag %s , abi %s .", tag, abi));
 
         JsonObject jsonObject = gson.fromJson(configuration, JsonObject.class);
-        String taskId = jsonObject.get("TaskId").getAsString();
-        int threshold = jsonObject.get("Threshold").getAsInt();
+        String taskId = jsonObject.get(TASK_ID).getAsString();
+        int threshold = jsonObject.get(THRESHOLD).getAsInt();
 
         byte[] target = null;
         for (int i = 0; i < MAX_RETRY_COUNT; i++) {
-            target = getRandomSo(x64, taskId, threshold, version);
+            target = getRandomSo(x64, taskId, threshold, version, trace);
             if (target != null) {
                 writeTag(target, tag);
                 break;
@@ -180,16 +183,20 @@ public class Downloader {
         }
 
         HttpResponseMessage build = request.createResponseBuilder(HttpStatus.OK).body(target).build();
-        logger.info("download : cost " + (System.currentTimeMillis() - start));
+        trace.trace("download : cost " + (System.currentTimeMillis() - start));
         return build;
     }
 
-    private byte[] getRandomSo(boolean x64, String taskId, int threshold, String version) {
+    private byte[] getRandomSo(boolean x64, String taskId, int threshold, String version, TraceHelper trace) {
         int index = threshold == 1 ? 1 : new Random().nextInt(threshold - 1) + 1;
         String target = System.getenv(TARGET_PATH);
         String blobName = getTargetBlobName(taskId, index, x64, version);
         String connectionString = System.getenv(AZURE_WEB_JOBS_STORAGE);
         String targetUri = String.format("%s/%s", target, blobName);
+        JsonObject json = new JsonObject();
+        json.addProperty("ix", index);
+        json.addProperty("ev", "dl");
+        trace.info(json.toString());
         try {
             return AzureStorageHelper.downloadBlobToByteArray(connectionString, targetUri);
         } catch (URISyntaxException e) {
