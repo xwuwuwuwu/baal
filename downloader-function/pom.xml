@@ -102,10 +102,10 @@
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.microsoft.azure</groupId>
-            <artifactId>applicationinsights-core</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.microsoft.azure</groupId>-->
+            <!--<artifactId>applicationinsights-core</artifactId>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>com.sendgrid</groupId>
             <artifactId>sendgrid-java</artifactId>
