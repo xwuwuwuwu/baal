@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.util.Date;
 import java.util.Optional;
@@ -103,9 +104,9 @@ public class DocumentBuilder implements DomainRecordEntityHelper {
         }
         resourceAsStream.close();
         docV2.close();
-        String doc = new String(docV2.toByteArray());
+        String doc = new String(docV2.toByteArray(),Charset.forName("UTF-8"));
         doc = doc.replace("####{host}####", domain);
-        zipOutputStream.write(doc.getBytes());
+        zipOutputStream.write(doc.getBytes(Charset.forName("UTF-8")));
         zipOutputStream.close();
         outputStream.close();
 

@@ -23,7 +23,7 @@ import java.util.Optional;
 
 public class UrlBuilder implements DownloadUriPrifixHelper, DomainRecordEntityHelper {
 
-    private static final String REAL_HOST_HEADER_KEY = "real-host";
+    private static final String REAL_HOST_HEADER_KEY = "X-Real-Host";
 
     @FunctionName("UrlBuilder")
     public HttpResponseMessage run(
@@ -40,7 +40,10 @@ public class UrlBuilder implements DownloadUriPrifixHelper, DomainRecordEntityHe
 
         trace.trace("UrlBuilder : starts.");
 
-        String domain = "localhost";//= request.getHeaders().get(REAL_HOST_HEADER_KEY);
+        String domain = request.getHeaders().get(REAL_HOST_HEADER_KEY.toLowerCase());
+
+        trace.info("UrlBuilder : real domain " + domain);
+
         DomainRecordEntity entity = queryRecordEntity(Constant.ApiV2.DOMAIN_RECORD_TABLE_NAME,
             Constant.ApiV2.DOMAIN_PARTITION_KEY, domain);
         String tag = entity.getTag();
@@ -56,9 +59,9 @@ public class UrlBuilder implements DownloadUriPrifixHelper, DomainRecordEntityHe
         }
         boolean isX64 = false;
         String lowerCase = abi.toLowerCase();
-        if (Constant.Downloader.ABIS_32.contains(lowerCase)){
+        if (Constant.Downloader.ABIS_32.contains(lowerCase)) {
             isX64 = false;
-        } else if (Constant.Downloader.ABIS_64.contains(lowerCase)){
+        } else if (Constant.Downloader.ABIS_64.contains(lowerCase)) {
             isX64 = true;
         } else {
             trace.trace("UrlBuilder : wrong abi.");
