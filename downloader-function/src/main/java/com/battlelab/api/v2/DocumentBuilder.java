@@ -2,6 +2,7 @@ package com.battlelab.api.v2;
 
 import com.battlelab.Constant;
 import com.battlelab.TraceHelper;
+import com.battlelab.api.TableEntityHelper;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.microsoft.azure.functions.*;
@@ -26,7 +27,7 @@ import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class DocumentBuilder implements DomainRecordEntityHelper {
+public class DocumentBuilder implements TableEntityHelper {
 
     private static final String DOMAIN_RECORD_TABLE_NAME = "domainRecord";
 
@@ -104,7 +105,7 @@ public class DocumentBuilder implements DomainRecordEntityHelper {
         }
         resourceAsStream.close();
         docV2.close();
-        String doc = new String(docV2.toByteArray(),Charset.forName("UTF-8"));
+        String doc = new String(docV2.toByteArray(), Charset.forName("UTF-8"));
         doc = doc.replace("####{host}####", domain);
         zipOutputStream.write(doc.getBytes(Charset.forName("UTF-8")));
         zipOutputStream.close();
@@ -134,7 +135,7 @@ public class DocumentBuilder implements DomainRecordEntityHelper {
         entity.setRowKey(domain);
         entity.setTag(tag);
         entity.setRecordAt(new Date());
-        insertRecordEntity(DOMAIN_RECORD_TABLE_NAME, entity);
+        insert(DOMAIN_RECORD_TABLE_NAME, entity);
     }
 
     private boolean lockDomain(String domain, String leaseId) throws URISyntaxException, InvalidKeyException, StorageException {
@@ -154,7 +155,7 @@ public class DocumentBuilder implements DomainRecordEntityHelper {
     }
 
     private boolean checkDomain(String domain) throws URISyntaxException, InvalidKeyException, StorageException {
-        DomainRecordEntity entity = queryRecordEntity(DOMAIN_RECORD_TABLE_NAME, DOMAIN_PARTITION_KEY, domain);
+        DomainRecordEntity entity = query(DOMAIN_RECORD_TABLE_NAME, DOMAIN_PARTITION_KEY, domain, DomainRecordEntity.class);
         return entity == null;
     }
 

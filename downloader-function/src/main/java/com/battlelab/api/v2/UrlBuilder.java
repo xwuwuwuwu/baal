@@ -4,6 +4,7 @@ import com.battlelab.Constant;
 import com.battlelab.TraceHelper;
 import com.battlelab.api.DownloadUriPrifixHelper;
 import com.battlelab.api.JwtTokenHelper;
+import com.battlelab.api.TableEntityHelper;
 import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.BindingName;
@@ -21,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class UrlBuilder implements DownloadUriPrifixHelper, DomainRecordEntityHelper {
+public class UrlBuilder implements DownloadUriPrifixHelper, TableEntityHelper {
 
     private static final String REAL_HOST_HEADER_KEY = "X-Real-Host";
 
@@ -42,15 +43,13 @@ public class UrlBuilder implements DownloadUriPrifixHelper, DomainRecordEntityHe
 
         String domain = request.getHeaders().get(REAL_HOST_HEADER_KEY.toLowerCase());
 
-        trace.info("UrlBuilder : real domain " + domain);
-
-        DomainRecordEntity entity = queryRecordEntity(Constant.ApiV2.DOMAIN_RECORD_TABLE_NAME,
-            Constant.ApiV2.DOMAIN_PARTITION_KEY, domain);
+        DomainRecordEntity entity = query(Constant.ApiV2.DOMAIN_RECORD_TABLE_NAME,
+            Constant.ApiV2.DOMAIN_PARTITION_KEY, domain, DomainRecordEntity.class);
         String tag = entity.getTag();
 
         String abi = request.getQueryParameters().get(Constant.Downloader.ABI);
 
-        trace.info(String.format("UrlBuilder : tag %s , abi %s", tag, abi));
+        trace.info(String.format("UrlBuilder : domain %s, tag %s , abi %s", domain, tag, abi));
 
         if (abi == null || abi.isEmpty()) {
             trace.trace("UrlBuilder : wrong abi.");
