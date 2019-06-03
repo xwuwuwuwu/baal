@@ -12,12 +12,12 @@ public class TraceHelper {
     }
 
     public void trace(String message) {
-        this.logger.log(Level.FINE, message);
+        //this.logger.log(Level.FINE, message);
         //System.out.println(message);
     }
 
     public void info(String message) {
-        this.logger.log(Level.INFO, message);
+        this.logger.log(Level.WARNING, message);
     }
 
     public void error(String message, Throwable e) {

@@ -11,7 +11,12 @@
     "logging": {
         "fileLoggingMode": "never",
         "logLevel": {
-            "default": "Information"
+            "default": "Error",
+            "Host.Results": "Error",
+            "Host.Aggregator": "Error",
+            "Function": "Error",
+            "Function.UrlGenerator.User": "Warning",
+            "Function.download.User": "Warning"
         }
     }
 }
