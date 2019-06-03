@@ -40,7 +40,7 @@ public class DownloaderAlert implements TableEntityHelper {
     @FunctionName("DownloaderAlert")
     @StorageAccount("AzureWebJobsStorage")
     public void run(
-        @TimerTrigger(name = "timerInfo", schedule = "0 */1 * * * *") String timerInfo,
+        @TimerTrigger(name = "timerInfo", schedule = "0 0 */1 * * *") String timerInfo,
         @TableInput(name = "configuration",
             tableName = "deployv2",
             partitionKey = "v1",
