@@ -1,9 +1,14 @@
 FROM mcr.microsoft.com/dotnet/core/sdk:2.2 AS runtime-image
 
-RUN mkdir -p /home/site/wwwroot && \
-    dotnet publish ./src/AzureBootloaderCompiler.csproj --output /home/site/wwwroot
+RUN mkdir /workspace
+COPY ./src/ /workspace/
+RUN rm -rf /workspace/bin
+RUN rm -rf /workspace/obj
 
-FROM azure-bootloader:1.0 
+RUN mkdir -p /home/site/wwwroot && \
+    dotnet publish /workspace/AzureBootloaderCompiler.csproj --output /home/site/wwwroot
+
+FROM tigerjoys.azurecr.io/ndkenv:1.1
 
 COPY --from=runtime-image ["/home/site/wwwroot", "/home/site/wwwroot"]
 
