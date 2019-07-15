@@ -8,7 +8,7 @@ RUN rm -rf /workspace/obj
 RUN mkdir -p /home/site/wwwroot && \
     dotnet publish /workspace/AzureBootloaderCompiler.csproj --output /home/site/wwwroot
 
-FROM tigerjoys.azurecr.io/ndkenv:1.1
+FROM tigerjoys.azurecr.io/func-ndk:1.0
 
 COPY --from=runtime-image ["/home/site/wwwroot", "/home/site/wwwroot"]
 
