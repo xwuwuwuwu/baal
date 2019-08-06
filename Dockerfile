@@ -12,4 +12,4 @@ FROM tigerjoys.azurecr.io/func-ndk:1.0
 
 COPY --from=runtime-image ["/home/site/wwwroot", "/home/site/wwwroot"]
 
-CMD ["dotnet", "/azure-functions-host/Microsoft.Azure.WebJobs.Script.WebHost.dll"]
+CMD ["/azure-functions-host/Microsoft.Azure.WebJobs.Script.WebHost"]
