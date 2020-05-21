@@ -1,24 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.438
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29905.134
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureBootloaderCompiler", "AzureBootloaderCompiler.csproj", "{C79CBBBF-39A4-4A77-8E73-D2BE5F81E5A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureBootloaderCompiler", "AzureBootloaderCompiler\AzureBootloaderCompiler.csproj", "{8A298EAC-F199-4263-84FE-3ACA65148F8A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6E50AE1A-83AD-4CE4-AE63-81A368887DF6}"
-	ProjectSection(SolutionItems) = preProject
-		..\azure-build.sh = ..\azure-build.sh
-		..\Dockerfile = ..\Dockerfile
-		..\env = ..\env
-		..\job.json = ..\job.json
-		..\readme.MD = ..\readme.MD
-		..\sources.list = ..\sources.list
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureBootloaderCompiler.Docker.Api", "AzureBootloaderCompiler.Docker.Api\AzureBootloaderCompiler.Docker.Api.csproj", "{FCE09D72-F376-4BA9-8234-6F0135AB397F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8A298EAC-F199-4263-84FE-3ACA65148F8A} = {8A298EAC-F199-4263-84FE-3ACA65148F8A}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "base", "base", "{20388CF6-1884-4D83-A18C-0CA39A0CB745}"
-	ProjectSection(SolutionItems) = preProject
-		..\docker\Dockerfile = ..\docker\Dockerfile
-	EndProjectSection
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureBootloaderCompiler.Utils", "AzureBootloaderCompiler.Utils\AzureBootloaderCompiler.Utils.csproj", "{D6327BB3-F5A5-45BE-A2AE-1CB47B584135}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureBootloaderCompiler.QueueMaker", "AzureBootloaderCompiler.QueueMaker\AzureBootloaderCompiler.QueueMaker.csproj", "{67AA08EB-B19A-4ADC-9414-973629E2A650}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassLibrary1", "ClassLibrary1\ClassLibrary1.csproj", "{DA97B2D6-AF88-4F22-BE44-1A5F4C0286E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,16 +22,29 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C79CBBBF-39A4-4A77-8E73-D2BE5F81E5A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C79CBBBF-39A4-4A77-8E73-D2BE5F81E5A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C79CBBBF-39A4-4A77-8E73-D2BE5F81E5A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C79CBBBF-39A4-4A77-8E73-D2BE5F81E5A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A298EAC-F199-4263-84FE-3ACA65148F8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A298EAC-F199-4263-84FE-3ACA65148F8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A298EAC-F199-4263-84FE-3ACA65148F8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A298EAC-F199-4263-84FE-3ACA65148F8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCE09D72-F376-4BA9-8234-6F0135AB397F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCE09D72-F376-4BA9-8234-6F0135AB397F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCE09D72-F376-4BA9-8234-6F0135AB397F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCE09D72-F376-4BA9-8234-6F0135AB397F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6327BB3-F5A5-45BE-A2AE-1CB47B584135}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6327BB3-F5A5-45BE-A2AE-1CB47B584135}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6327BB3-F5A5-45BE-A2AE-1CB47B584135}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6327BB3-F5A5-45BE-A2AE-1CB47B584135}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67AA08EB-B19A-4ADC-9414-973629E2A650}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67AA08EB-B19A-4ADC-9414-973629E2A650}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67AA08EB-B19A-4ADC-9414-973629E2A650}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67AA08EB-B19A-4ADC-9414-973629E2A650}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA97B2D6-AF88-4F22-BE44-1A5F4C0286E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA97B2D6-AF88-4F22-BE44-1A5F4C0286E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA97B2D6-AF88-4F22-BE44-1A5F4C0286E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA97B2D6-AF88-4F22-BE44-1A5F4C0286E8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{20388CF6-1884-4D83-A18C-0CA39A0CB745} = {6E50AE1A-83AD-4CE4-AE63-81A368887DF6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0E24ADD5-1B8B-41F0-BDB8-33A41AA5331B}

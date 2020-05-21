@@ -1,0 +1,9 @@
+﻿{
+  "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=arenatest;AccountKey=aWIAIfYNt78ClHbtfyUyODUAsFCNjj0hvtVJ/DIlRw8KDjBpQxA+DfeTi05DNY94D9inipWA29xXQTUGGYjIlQ==;EndpointSuffix=core.windows.net",
+  "JobQueue": "bootloaderjobs",
+  "JobTable": "testplanedjobs",
+  "JobHistoryTable": "finishedjobs",
+  "DeployTable": "deploy",
+  "SourcePath": "https://arenatest.blob.core.windows.net/source/bootloader.zip",
+  "TargetPath": "https://arenatest.blob.core.windows.net/testtarget"
+}

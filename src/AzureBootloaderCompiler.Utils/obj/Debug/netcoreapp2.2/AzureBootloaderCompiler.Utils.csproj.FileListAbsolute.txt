@@ -1,0 +1,15 @@
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\bin\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.deps.json
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\bin\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.runtimeconfig.json
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\bin\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.runtimeconfig.dev.json
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\bin\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.dll
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\bin\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.pdb
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\bin\Debug\netcoreapp2.2\AzureBootloaderCompiler.dll
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\bin\Debug\netcoreapp2.2\ClassLibrary1.dll
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\bin\Debug\netcoreapp2.2\AzureBootloaderCompiler.pdb
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\bin\Debug\netcoreapp2.2\ClassLibrary1.pdb
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\obj\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.csprojAssemblyReference.cache
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\obj\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.AssemblyInfoInputs.cache
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\obj\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.AssemblyInfo.cs
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\obj\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.csproj.CopyComplete
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\obj\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.dll
+C:\Users\yanzhangwu\source\repos\baal\src\AzureBootloaderCompiler.Utils\obj\Debug\netcoreapp2.2\AzureBootloaderCompiler.Utils.pdb
