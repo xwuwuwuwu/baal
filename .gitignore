@@ -24,3 +24,7 @@ hs_err_pid*
 *.iml
 *.vs
 .idea
+
+
+/bin
+/obj
