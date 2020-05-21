@@ -10,7 +10,6 @@
   <ItemGroup>
     <ProjectReference Include="..\AzureBootloaderCompiler.QueueMaker\AzureBootloaderCompiler.QueueMaker.csproj" />
     <ProjectReference Include="..\AzureBootloaderCompiler\AzureBootloaderCompiler.csproj" />
-    <ProjectReference Include="..\ClassLibrary1\ClassLibrary1.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
