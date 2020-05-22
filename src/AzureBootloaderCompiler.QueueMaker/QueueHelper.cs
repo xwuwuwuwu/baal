@@ -71,7 +71,7 @@ namespace AzureBootloaderCompiler.QueueMaker
             {
                 TableOperation delete = TableOperation.Delete(plan);
                 _ = await jobTable.ExecuteAsync(delete);
-                plan.UpdateAt = new DateTime();
+                plan.UpdateAt = DateTime.Now;
                 TableOperation insertOrMerge = TableOperation.InsertOrMerge(plan);
                 _ = await jobHistoryTable.ExecuteAsync(insertOrMerge);
                 return true;
@@ -90,7 +90,7 @@ namespace AzureBootloaderCompiler.QueueMaker
                 {
                     plan.Current += step;
                 }
-                plan.UpdateAt = new DateTime();
+                plan.UpdateAt = DateTime.Now;
                 TableOperation insertOrMerge = TableOperation.InsertOrMerge(plan);
                 _ = await jobTable.ExecuteAsync(insertOrMerge);
                 MakeQueueMessageAsync(jobQueue, plan, start, count, settings.SourcePath, settings.TargetPath);
