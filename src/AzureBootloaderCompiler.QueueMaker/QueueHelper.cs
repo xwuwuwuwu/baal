@@ -9,11 +9,14 @@ using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace AzureBootloaderCompiler.QueueMaker
 {
     public class QueueHelper
     {
+        public static int DEFAULT_STEP = 10000;
+
         public static async Task<bool> MakeQueueAsync(ILogger logger)
         {
             Settings settings = Settings.Load();
@@ -28,24 +31,24 @@ namespace AzureBootloaderCompiler.QueueMaker
             _ = await jobHistoryTable.CreateIfNotExistsAsync();
 
             JobEntity plan = null;
-
             {
                 TableQuery<JobEntity> query = new TableQuery<JobEntity>().Take(8);
                 TableQuerySegment<JobEntity> segments = await jobTable.ExecuteQuerySegmentedAsync(query, null);
                 var jobEntities = segments.Results;
                 var ordered = jobEntities.OrderByDescending(i => i.CreateAt);
+
+                if (ordered.Count() == 0)
+                {
+                    return true;
+                }
+
                 plan = ordered.First();
             }
-
-            if (plan == null)
-            {
-                return true;
-            }
-
+            
             int step = int.Parse(settings.Step);
             if (step <= 0)
             {
-                step = 10000;
+                step = DEFAULT_STEP;
             }
 
             {
@@ -68,7 +71,7 @@ namespace AzureBootloaderCompiler.QueueMaker
             {
                 TableOperation delete = TableOperation.Delete(plan);
                 _ = jobTable.ExecuteAsync(delete);
-                //plan.updateTimestamp();
+                plan.UpdateAt = new DateTime();
                 TableOperation insertOrMerge = TableOperation.InsertOrMerge(plan);
                 _ = jobHistoryTable.ExecuteAsync(insertOrMerge);
                 return true;
@@ -87,7 +90,7 @@ namespace AzureBootloaderCompiler.QueueMaker
                 {
                     plan.Current += step;
                 }
-                //plan.updateTimestamp();
+                plan.UpdateAt = new DateTime();
                 TableOperation insertOrMerge = TableOperation.InsertOrMerge(plan);
                 _ = jobTable.ExecuteAsync(insertOrMerge);
                 MakeQueueMessageAsync(jobQueue, plan, start, count, settings.SourcePath, settings.TargetPath);
@@ -99,7 +102,7 @@ namespace AzureBootloaderCompiler.QueueMaker
         private static int MakeQueueMessageAsync(CloudQueue cloudQueue, JobEntity jobEntity, 
             int start, int count, string sourcePath, string targetPath)
         {
-            //AtomicInteger errorCounter = new AtomicInteger();
+            int errorCount = 0;
             Parallel.For(start, start + count, i =>
             {
                 JObject jObject = new JObject();
@@ -116,11 +119,11 @@ namespace AzureBootloaderCompiler.QueueMaker
                 }
                 catch (StorageException)
                 {
-                    //errorCounter.incrementAndGet();
+                    Interlocked.Increment(ref errorCount);
                 }
                 Console.WriteLine(i);
             });
-            return 1;
+            return errorCount;
         }
     }
 }
