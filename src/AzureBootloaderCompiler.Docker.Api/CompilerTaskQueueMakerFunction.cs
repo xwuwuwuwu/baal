@@ -9,7 +9,6 @@ namespace AzureBootloaderCompiler.Docker.Api
     public static class CompilerTaskQueueMakerFunction
     {
         [FunctionName("CompilerQueue")]
-        [Singleton]
         public static async Task RunAsync([TimerTrigger("0 */1 * * * *")]TimerInfo myTimer, ILogger logger)
         {
             logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");

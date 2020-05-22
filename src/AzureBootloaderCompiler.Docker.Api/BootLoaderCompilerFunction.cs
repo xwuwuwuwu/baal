@@ -1,5 +1,7 @@
 //using AzureBootloaderCompiler.QueueMaker;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Threading.Tasks;
 
 namespace AzureBootloaderCompiler.Docker.Api
@@ -12,6 +14,7 @@ namespace AzureBootloaderCompiler.Docker.Api
             string jsonString,
           Microsoft.Extensions.Logging.ILogger logger)
         {
+            logger.LogInformation($"C# QueueTrigger function executed at: {DateTime.Now}");
             //await BootLoaderCompiler.DoCompile(jsonString, logger);
         }
     }
