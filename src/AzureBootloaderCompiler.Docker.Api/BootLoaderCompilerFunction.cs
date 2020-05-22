@@ -1,4 +1,4 @@
-using AzureBootloaderCompiler.QueueMaker;
+//using AzureBootloaderCompiler.QueueMaker;
 using Microsoft.Azure.WebJobs;
 using System.Threading.Tasks;
 
@@ -12,7 +12,7 @@ namespace AzureBootloaderCompiler.Docker.Api
             string jsonString,
           Microsoft.Extensions.Logging.ILogger logger)
         {
-            await BootLoaderCompiler.DoCompile(jsonString, logger);
+            //await BootLoaderCompiler.DoCompile(jsonString, logger);
         }
     }
 }
