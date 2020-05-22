@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using AzureBootloaderCompiler.QueueMaker;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
@@ -9,10 +10,10 @@ namespace AzureBootloaderCompiler.Docker.Api
     public static class BooloaderCompilerFunction
     {
         [FunctionName("Compiler")]
-        public static void Run([QueueTrigger("bootloaderjobs")]string jsonString, ILogger log)
+        public static async Task RunAsync([QueueTrigger("bootloaderjobs")]string jsonString, ILogger log)
         {
             log.LogInformation($"C# Queue trigger function processed: {jsonString}");
-            BootLoaderCompiler.DoCompile(jsonString, log);
+            await BootLoaderCompiler.DoCompileSync(jsonString, log);
         }
     }
 }

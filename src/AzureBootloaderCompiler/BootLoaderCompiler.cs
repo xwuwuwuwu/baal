@@ -14,7 +14,7 @@ namespace AzureBootloaderCompiler
     {
         public static IEnumerable<string> ABIS = new List<string>() { "armeabi", "arm64-v8a" };
 
-        public static async Task DoCompile(string jsonString, ILogger logger)
+        public static async Task DoCompileSync(string jsonString, ILogger logger)
         {
             var sw = Stopwatch.StartNew();
             var js = JsonConvert.DeserializeObject<JObject>(jsonString);
