@@ -8,9 +8,9 @@ namespace AzureBootloaderCompiler.Docker.Api
     public static class BooloaderCompilerFunction
     {
         [FunctionName("Compiler")]
-        public static void Run([QueueTrigger("bootloaderjobs")]string myQueueItem, ILogger log)
+        public static void Run([QueueTrigger("bootloaderjobs")]string jsonString, ILogger log)
         {
-            log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
+            log.LogInformation($"C# Queue trigger function processed: {jsonString}");
         }
     }
 }
