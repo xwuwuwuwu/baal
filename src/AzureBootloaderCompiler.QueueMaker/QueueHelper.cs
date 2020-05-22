@@ -70,10 +70,10 @@ namespace AzureBootloaderCompiler.QueueMaker
             if (plan.Current >= plan.Amount)
             {
                 TableOperation delete = TableOperation.Delete(plan);
-                _ = jobTable.ExecuteAsync(delete);
+                _ = await jobTable.ExecuteAsync(delete);
                 plan.UpdateAt = new DateTime();
                 TableOperation insertOrMerge = TableOperation.InsertOrMerge(plan);
-                _ = jobHistoryTable.ExecuteAsync(insertOrMerge);
+                _ = await jobHistoryTable.ExecuteAsync(insertOrMerge);
                 return true;
             }
             else
@@ -92,7 +92,7 @@ namespace AzureBootloaderCompiler.QueueMaker
                 }
                 plan.UpdateAt = new DateTime();
                 TableOperation insertOrMerge = TableOperation.InsertOrMerge(plan);
-                _ = jobTable.ExecuteAsync(insertOrMerge);
+                _ = await jobTable.ExecuteAsync(insertOrMerge);
                 MakeQueueMessageAsync(jobQueue, plan, start, count, settings.SourcePath, settings.TargetPath);
             }
             return true;
@@ -103,7 +103,7 @@ namespace AzureBootloaderCompiler.QueueMaker
             int start, int count, string sourcePath, string targetPath)
         {
             int errorCount = 0;
-            Parallel.For(start, start + count, i =>
+            Parallel.For(start, start + count, async i =>
             {
                 JObject jObject = new JObject();
                 jObject.Add("taskID", jobEntity.PartitionKey);
@@ -115,7 +115,7 @@ namespace AzureBootloaderCompiler.QueueMaker
                 CloudQueueMessage message = new CloudQueueMessage(jObject.ToString());
                 try
                 {
-                    cloudQueue.AddMessageAsync(message);
+                    await cloudQueue.AddMessageAsync(message);
                 }
                 catch (StorageException)
                 {
