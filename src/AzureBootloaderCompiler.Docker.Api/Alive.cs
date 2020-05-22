@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace AzureBootloaderCompiler
+namespace AzureBootloaderCompiler.Docker.Api
 {
     public static class Alive
     {
